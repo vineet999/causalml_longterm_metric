@@ -847,8 +847,15 @@ const CONFIG = {
   // leaves the mountain looking small. These enlarge it and crop the margins:
   // mobileFill scales past the container width, mobileKeepY is the fraction of
   // the frame height retained (the rest is empty sky and ground).
-  mobileFill: 1.28,
-  mobileKeepY: 0.74,
+  mobileFill: 1.5,
+  mobileKeepY: 0.64,
+
+  // Render fewer pixels on phones. The camera framing depends on the canvas
+  // ASPECT, not its size, so halving the resolution changes nothing visually
+  // but roughly quarters the work the GPU does each frame - which is most of
+  // why the mobile version feels heavy after it has downloaded.
+  mobileStageWidth: 800,
+  mobileStageHeight: 450,
 
   // Hold the scene download until the tool is near the viewport. In a long
   // article that means the page becomes readable immediately and the ~MBs of
@@ -986,13 +993,14 @@ async function init() {
 
     // Scale past the container so the mountain fills the width, then crop the
     // empty margins by offsetting and shortening the stage.
-    const scale = (avail / CONFIG.stageWidth) * CONFIG.mobileFill;
-    const drawnW = CONFIG.stageWidth * scale;
-    const drawnH = CONFIG.stageHeight * scale;
+    const cw = CONFIG.mobileStageWidth, ch = CONFIG.mobileStageHeight;
+    const scale = (avail / cw) * CONFIG.mobileFill;
+    const drawnW = cw * scale;
+    const drawnH = ch * scale;
     const keptH = drawnH * CONFIG.mobileKeepY;
 
-    canvas.style.width = CONFIG.stageWidth + 'px';
-    canvas.style.height = CONFIG.stageHeight + 'px';
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
     canvas.style.position = 'absolute';
     canvas.style.left = ((avail - drawnW) / 2) + 'px';
     canvas.style.top = (-(drawnH - keptH) / 2) + 'px';
