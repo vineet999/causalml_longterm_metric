@@ -39,14 +39,23 @@ const CONFIG = {
   // normally - desktop keeps exactly the behaviour it had.
   scaleBelow: 900,
 
+  // The scene sits inside a lot of empty cream at 1280x720, so a plain fit
+  // leaves the mountain looking small. These enlarge it and crop the margins:
+  // mobileFill scales past the container width, mobileKeepY is the fraction of
+  // the frame height retained (the rest is empty sky and ground).
+  mobileFill: 1.28,
+  mobileKeepY: 0.74,
+
 
   // Preserved on every frame. Your trekkers face along +X with Y=90; if they
   // end up backwards, this is the number to change.
   yawDegrees: 90,
 };
 
-const statusEl = document.getElementById('status');
-const say = (m) => { console.log(m); statusEl.textContent = m; };
+// (the on-screen status element was removed; say() logs to the console)
+// Status goes to the console only: the on-screen line was a development aid
+// and has no place in the published piece.
+const say = (m) => { console.log(m); };
 
 let walkAmp = 0.7, kneeAmp = 0.45;   // set at load once units are known
 
@@ -59,9 +68,7 @@ const app = new Application(canvas);
    already cached - by the time app.load runs. */
 if (!CONFIG.sceneUrl.startsWith('PASTE')) {
   const l = document.createElement('link');
-  l.rel = 'preload'; l.as = 'fetch';
-  // only a cross-origin scene needs CORS mode; a local file must not set it
-  if (/^https?:\/\//i.test(CONFIG.sceneUrl)) l.crossOrigin = 'anonymous';
+  l.rel = 'preload'; l.as = 'fetch'; l.crossOrigin = 'anonymous';
   l.href = CONFIG.sceneUrl;
   document.head.appendChild(l);
 }
@@ -109,16 +116,29 @@ async function init() {
       canvas.style.width = '';
       canvas.style.height = '';
       canvas.style.transform = '';
+      canvas.style.position = '';
+      canvas.style.left = '';
+      canvas.style.top = '';
       stage.style.height = '';
       return;
     }
 
     stage.classList.add('is-scaled');
-    const scale = avail / CONFIG.stageWidth;
+
+    // Scale past the container so the mountain fills the width, then crop the
+    // empty margins by offsetting and shortening the stage.
+    const scale = (avail / CONFIG.stageWidth) * CONFIG.mobileFill;
+    const drawnW = CONFIG.stageWidth * scale;
+    const drawnH = CONFIG.stageHeight * scale;
+    const keptH = drawnH * CONFIG.mobileKeepY;
+
     canvas.style.width = CONFIG.stageWidth + 'px';
     canvas.style.height = CONFIG.stageHeight + 'px';
+    canvas.style.position = 'absolute';
+    canvas.style.left = ((avail - drawnW) / 2) + 'px';
+    canvas.style.top = (-(drawnH - keptH) / 2) + 'px';
     canvas.style.transform = `scale(${scale})`;
-    stage.style.height = (CONFIG.stageHeight * scale) + 'px';
+    stage.style.height = keptH + 'px';
   }
   fitStage();
   window.addEventListener('resize', fitStage);

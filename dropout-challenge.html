@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dropout Challenge</title>
+
+<!-- Open the TLS connections to the CDNs while the HTML is still parsing, so
+     the runtime and the scene start downloading a few hundred ms sooner. -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://prod.spline.design" crossorigin>
+<link rel="dns-prefetch" href="https://prod.spline.design">
+<link rel="modulepreload"
+      href="https://unpkg.com/@splinetool/runtime@1.9.28/build/runtime.js"
+      crossorigin>
+<style>
+  :root {
+    --bg: #F0ECE3;
+    --panel: #FFFFFF;
+    --panel-alt: #FAF7F1;
+    --ink: #3E352C;
+    --muted: #8A7B6C;
+    --line: #DCD3C6;
+    --accent: #7A6448;
+    --good: #2F6B4F;
+    --poor: #B4483C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+
+  .trek-app { width: 100%; max-width: 1280px; margin: 0 auto; padding: 16px; }
+
+  /* ---------- stage ----------
+     Spline frames the camera to the canvas's PIXEL size, so a narrow canvas
+     crops the mountain rather than shrinking it - which is why CSS aspect
+     ratios alone could never fix the phone view.
+
+     Instead the canvas is held at a fixed desktop size (so Spline always
+     renders the full scene it was framed for) and the whole element is scaled
+     down with a CSS transform to fit whatever width is available. transform
+     does not change clientWidth, so Spline never notices. */
+  /* Desktop: canvas simply fills the stage, as it always did. */
+  .trek-stage { position: relative; width: 100%; aspect-ratio: 16 / 9;
+    overflow: hidden; }
+  #canvas3d { width: 100%; height: 100%; transform-origin: top left; }
+
+  /* Mobile only: the stage height is set in JS to match the scaled canvas,
+     so the aspect-ratio rule must not fight it. */
+  .trek-stage.is-scaled { aspect-ratio: auto; }
+
+  /* ---------- readouts, side by side below the buttons ---------- */
+  .trek-readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  /* The Spline runtime binds its own camera controls to the canvas, so scroll
+     becomes zoom and drag becomes orbit - which hijacks the page as soon as the
+     pointer crosses the graphic. All real interaction lives in the HTML buttons,
+     so the canvas does not need pointer input at all: turning it off lets scroll
+     and swipe pass straight through to the page. */
+  #canvas3d { display: block; pointer-events: none; touch-action: pan-y; }
+  .trek-stage { touch-action: pan-y; }
+  /* A quiet placeholder beats an empty cream rectangle: it tells the reader
+     something is coming, which is most of what perceived speed is. */
+  #loader { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    background: var(--bg); transition: opacity .45s ease; }
+  #loader.is-done { opacity: 0; pointer-events: none; }
+  .loader-bar { width: min(210px, 45%); height: 3px; background: var(--line);
+    border-radius: 2px; overflow: hidden; }
+  .loader-bar i { display: block; height: 100%; width: 35%; border-radius: 2px;
+    background: var(--accent); animation: slide 1.15s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); }
+                     100% { transform: translateX(390%); } }
+  .loader-text { font-size: 12.5px; color: var(--muted); letter-spacing: .02em; }
+
+
+  /* ---------- readout cards ---------- */
+  .tc-card { border: 1px solid var(--line); border-radius: 10px;
+    padding: 15px 16px; background: var(--panel); }
+  .tc-card--nsm { background: var(--panel-alt); border-color: #CFC3B0; }
+  .tc-card-label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--muted); }
+  .tc-card-name { font-size: 13px; margin-top: 3px; line-height: 1.35; }
+  .tc-card-value { font-size: 34px; line-height: 1.1; margin: 8px 0 5px;
+    font-variant-numeric: tabular-nums; color: var(--accent); }
+  .tc-card--nsm .tc-card-value { color: var(--good); }
+  .tc-card--nsm .tc-card-value.is-poor { color: var(--poor); }
+  .tc-card-def { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .tc-card-def em { font-style: italic; }
+
+  /* ---------- stats strip, between stage and buttons ---------- */
+  .tc-stats { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center;
+    font-size: 13px; color: var(--muted);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 13px 4px; margin: 16px 0; }
+  .tc-stats span { display: flex; align-items: baseline; gap: 6px; }
+  .tc-stats b { color: var(--ink); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- metric buttons ---------- */
+  .tc-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 9px; text-align: center; }
+  /* A 12-column grid gives an exact 4 + 3 split: four buttons spanning 3
+     columns fill row one, three spanning 4 columns fill row two. Both rows end
+     flush, which flex-wrap cannot guarantee with uneven label lengths. */
+  .tc-metrics { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; }
+  .tc-metric:nth-child(-n+4) { grid-column: span 3; }
+  .tc-metric:nth-child(n+5)  { grid-column: span 4; }
+  .tc-metric { font: inherit; font-size: 14px; padding: 9px 12px; cursor: pointer;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 999px; text-align: center; line-height: 1.3;
+    transition: background .15s, border-color .15s, color .15s; }
+  .tc-metric:hover { border-color: var(--accent); }
+  .tc-metric.is-active { background: var(--accent); border-color: var(--accent);
+    color: #fff; }
+
+  .tc-blurb { margin: 14px auto 0; font-size: 14px; line-height: 1.6;
+    color: var(--muted); max-width: 64ch; text-align: center; min-height: 2.9em; }
+
+  .tc-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+  .tc-buttons button { font: inherit; font-size: 13px; padding: 7px 16px;
+    cursor: pointer; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink); }
+  .tc-buttons button:hover { border-color: var(--accent); }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 860px) {
+    .trek-app { padding: 12px; }
+    .trek-readout { gap: 10px; margin-top: 16px; }
+    .tc-card { padding: 12px 13px; }
+    .tc-card-value { font-size: 27px; }
+    .tc-card-def { display: none; }   /* the number and its name carry it */
+    .tc-stats { gap: 14px 18px; justify-content: center; }
+    .tc-metric { font-size: 12.5px; padding: 8px 8px; }
+  }
+  @media (max-width: 620px) {
+    /* Four across on a phone leaves ~80px per button, so labels like
+       "# Summit completions" wrap to four lines. Two across keeps them
+       readable and still avoids the full-width stack. */
+    .tc-metrics { grid-template-columns: 1fr 1fr; }
+    .tc-metric:nth-child(-n+4), .tc-metric:nth-child(n+5) { grid-column: span 1; }
+    .tc-metric:last-child { grid-column: 1 / -1; }   /* odd one out, full width */
+    .tc-stats { font-size: 12px; }
+    .tc-stats b { font-size: 16px; }
+    /* keep the two cards side by side even on the narrowest phones: reading
+       the chosen metric against the North Star is the whole point, and
+       stacking them puts one off screen */
+    .trek-readout { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tc-card { padding: 10px 11px; }
+    .tc-card-value { font-size: 22px; }
+    .tc-card-name { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="trek-app">
+    <div class="trek-stage">
+      <canvas id="canvas3d"></canvas>
+      <div id="loader"><div class="loader-bar"><i></i></div>
+        <div class="loader-text">Loading the mountain…</div></div>
+    </div>
+
+    <div id="stats-slot"></div>
+    <div id="buttons-slot"></div>
+
+    <div class="trek-readout">
+      <div id="metric-slot"></div>
+      <div id="nsm-slot"></div>
+    </div>
+  </div>
+  <script type="module">
+import { Application } from 'https://unpkg.com/@splinetool/runtime@1.9.28/build/runtime.js';
+
+/* ===== sim.js ===== */
+/**
+ * The simulation. Pure JS - no Spline, no DOM, no rendering.
+ *
+ * Each metric is a scripted scenario, not a probability soup: the table says
+ * exactly how many trekkers stop where, so the sim assigns fixed outcomes and
+ * only jitters timing. That keeps the visual difference between metrics legible
+ * instead of leaving it to chance on any given run.
+ */
+
+/** Fractions along the route. Match these to your Spline waypoints. */
+const MILESTONES = {
+  base:   0.00,
+  cafe:   0.35,
+  bridge: 0.55,
+  flag:   0.70,
+  summit: 1.00,
+};
+
+/** Coins. Only relative size matters for the story. */
+const SPEND = { cafe: 200, souvenir: 500 };
+
+/**
+ * North Star: trekkers who reach the summit AND engage (cafe and/or souvenir),
+ * over everyone who started. Deliberately not a button - it is the thing every
+ * button fails to optimise.
+ */
+const NSM_LABEL = 'Summit + engaged / started';
+
+/**
+ * plan(n) returns one outcome per trekker:
+ *   stopAt        - fraction along the route where they stop
+ *   engageCafe    - spends at the cafe
+ *   engageSummit  - buys a souvenir at the summit
+ * Anything not stated in the source table uses naturalEngage, the rate at
+ * which summit-reachers spend when nothing pushes them to.
+ */
+const M = MILESTONES;
+
+const METRICS = {
+  base_starts: {
+    label: '# Base starts',
+    definition: 'Trekkers who started the trek from the base point',
+    blurb: 'Everyone sets off, nobody is measured on finishing. Trekkers reach ' +
+           'the cafe and stop. The count looks healthy; the summit is empty.',
+    speedMul: 1,
+    startCount: 8,
+    plan: (n) => Array.from({ length: n }, () => ({
+      stopAt: M.cafe, engageCafe: false, engageSummit: false })),
+  },
+
+  time_spent: {
+    label: 'Time spent climbing / user',
+    definition: 'Total minutes trekkers spent climbing',
+    blurb: 'Rewards lingering, so everyone slows down. Some stop at the cafe, ' +
+           'some at the flag, two make the summit. Time per user rises either way.',
+    speedMul: 0.9,                       // 10% slower
+    startCount: 8,
+    plan: (n) => Array.from({ length: n }, (_, i) => {
+      // 3 cafe, 3 flag, 2 summit (scaled if n differs)
+      const f = i / n;
+      const stopAt = f < 0.375 ? M.cafe : (f < 0.75 ? M.flag : M.summit);
+      return { stopAt, engageCafe: false, engageSummit: false };
+    }),
+  },
+
+  summit_completions: {
+    label: '# Summit completions',
+    definition: 'Trekkers who reach the summit from the base',
+    blurb: 'The closest metric to the goal, and it still misses. Everyone ' +
+           'climbs straight through and summits - but nothing rewards ' +
+           'spending, so nobody spends, and the North Star stays at zero.',
+    speedMul: 1,
+    startCount: 8,
+    // Explicitly zero engagement: the metric rewards arriving, nothing else,
+    // so nobody spends. Summits are maximised and the NSM still reads 0%.
+    plan: (n) => Array.from({ length: n }, () => ({
+      stopAt: M.summit, engageCafe: false, engageSummit: false })),
+  },
+
+  avg_revenue: {
+    label: 'Average revenue / user',
+    definition: 'Total revenue (cafe + summit) / total trekkers at base',
+    blurb: 'Rewards spending per head. Everyone stops at the cafe and spends; ' +
+           'two carry on to buy souvenirs at the summit.',
+    speedMul: 1,
+    startCount: 8,
+    plan: (n) => Array.from({ length: n }, (_, i) => ({
+      stopAt: i < 2 ? M.summit : M.cafe,
+      engageCafe: true,
+      engageSummit: i < 2,
+    })),
+  },
+
+  walk_sessions: {
+    label: '# Walk sessions / user',
+    definition: 'People who restarted after intermediate stops till their ' +
+                'final stop / people who started the trek',
+    blurb: 'Rewards restarting, so the trek fragments into little bursts. ' +
+           'Trekkers pause before the cafe, again at the cafe, again at the ' +
+           'bridge, then stop at the flag. Sessions per user climbs; almost ' +
+           'nobody summits.',
+    speedMul: 1,
+    startCount: 8,
+    // Four rest points, so each trekker banks five sessions on the way up.
+    plan: (n) => Array.from({ length: n }, (_, i) => ({
+      stopAt: i < 2 ? M.summit : M.flag,
+      restStops: [0.20, M.cafe, M.bridge, M.flag],
+      engageCafe: false,
+      engageSummit: i < 2,
+    })),
+  },
+
+  engaged_users: {
+    label: '# Engaged users',
+    definition: 'Trekkers who engaged with the cafe or the summit shop',
+    blurb: 'Counts anyone who spends anything. A cafe stop scores the same as ' +
+           'a summit purchase, so the cafe is the cheapest way to move it.',
+    speedMul: 1,
+    startCount: 8,
+    plan: (n) => Array.from({ length: n }, (_, i) => ({
+      stopAt: i < 2 ? M.summit : M.cafe,
+      engageCafe: true,
+      engageSummit: i < 2,
+    })),
+  },
+
+  distance_per_user: {
+    label: 'Distance travelled / user',
+    definition: 'Distance walked during the trek, per user',
+    blurb: 'A ratio, so the cheapest way to raise it is fewer starters. Only ' +
+           'three set off - two summit, one stops at the flag. The average ' +
+           'looks superb while the mountain sits empty.',
+    speedMul: 1,
+    startCount: 3,                      // the denominator shrinks
+    plan: (n) => Array.from({ length: n }, (_, i) => ({
+      stopAt: i < 2 ? M.summit : M.flag,
+      engageCafe: false, engageSummit: false,
+    })),
+  },
+};
+
+function makeRng(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function createSim(opts = {}) {
+  const cfg = {
+    seed: 42,
+    maxTrekkers: 8,
+    metric: 'base_starts',
+    climbSeconds: 13,
+    stopPause: 1.4,
+    restPause: 1.1,          // how long a mid-climb rest lasts
+    fadeSeconds: 0.5,
+    respawnDelay: 1.0,
+    // Spend rate for summit-reachers when a metric leaves engagement
+    // unspecified. Zero by default: if nothing rewards spending, nobody spends.
+    naturalEngage: 0,
+    running: true,
+    ...opts,
+  };
+
+  let rng = makeRng(cfg.seed);
+  let agents = [];
+  let plans = [];
+  const spendEvents = [];    // drained by the renderer for the coin effect
+
+  const totals = {
+    started: 0, summited: 0, stoppedShort: 0,
+    engaged: 0, revenue: 0, climbMinutes: 0, distance: 0,
+    nsmHits: 0,             // summited AND engaged
+    sessions: 0,            // one per start, plus one per resumption
+  };
+
+  function rules() { return METRICS[cfg.metric] || METRICS.base_starts; }
+
+  function activeCount() {
+    return Math.min(rules().startCount, cfg.maxTrekkers);
+  }
+
+  function spawn(a, idx) {
+    const r = rules();
+    const plan = plans[idx % plans.length];
+
+    a.stopAt = plan.stopAt;
+    // Rest stops are pauses mid-climb, not the end of the trek: the trekker
+    // waits, then walks on. Each resumption is a new "session".
+    a.restStops = (plan.restStops || []).filter(v => v < plan.stopAt);
+    a.restIdx = 0;
+    a.engageCafe = plan.engageCafe;
+    // null means "not specified by this metric" - fall back to natural rate
+    a.engageSummit = plan.engageSummit === null
+      ? (plan.stopAt >= M.summit && rng() < cfg.naturalEngage)
+      : plan.engageSummit;
+
+    a.t = 0;
+    a.speed = (1 / cfg.climbSeconds) * r.speedMul * (0.9 + rng() * 0.2);
+    a.status = 'climbing';
+    a.timer = 0;
+    a.visible = true;
+    a.didCafe = false;
+    // must reset: a recycled rig kept its previous life's engagement flag,
+    // which inflated the NSM every time a trekker respawned
+    a.engagedAny = false;
+    totals.started++;
+    totals.sessions++;      // setting off is the first session
+  }
+
+  function rebuild() {
+    rng = makeRng(cfg.seed);
+    const r = rules();
+    const n = activeCount();
+    plans = r.plan(n);
+
+    for (const k of Object.keys(totals)) totals[k] = 0;
+    spendEvents.length = 0;
+
+    agents = [];
+    for (let i = 0; i < cfg.maxTrekkers; i++) {
+      const a = { id: i, active: i < n };
+      if (a.active) {
+        spawn(a, i);
+        // stagger the start so they do not move as one block
+        a.t = 0;
+        a.startDelay = i * 0.55;
+        a.status = 'waiting';
+        a.timer = a.startDelay;
+        a.visible = false;
+      } else {
+        a.status = 'off'; a.visible = false; a.t = 0;
+      }
+      agents.push(a);
+    }
+  }
+  rebuild();
+
+  /** The value of whichever metric is currently selected. */
+  function metricValue() {
+    const s = totals;
+    switch (cfg.metric) {
+      case 'base_starts':       return { value: s.started, unit: 'starts' };
+      case 'time_spent':        return { value: s.started ? s.climbMinutes / s.started : 0,
+                                         unit: 'min/user', decimals: 1 };
+      case 'summit_completions':return { value: s.summited, unit: 'summits' };
+      case 'avg_revenue':       return { value: s.started ? s.revenue / s.started : 0,
+                                         unit: 'coins/user', decimals: 0 };
+      case 'walk_sessions':     return { value: s.started ? s.sessions / s.started : 0,
+                                         unit: 'sessions/user', decimals: 1 };
+      case 'engaged_users':     return { value: s.engaged, unit: 'users' };
+      case 'distance_per_user': return { value: s.started ? s.distance / s.started : 0,
+                                         unit: 'km/user', decimals: 2 };
+      default:                  return { value: 0, unit: '' };
+    }
+  }
+
+  function nsm() {
+    return totals.started ? totals.nsmHits / totals.started : 0;
+  }
+
+  return {
+    get agents() { return agents; },
+    get totals() { return totals; },
+    get config() { return { ...cfg }; },
+    get milestones() { return M; },
+    metricValue, nsm,
+
+    /** Renderer drains these to float coin symbols. */
+    takeSpendEvents() { return spendEvents.splice(0, spendEvents.length); },
+
+    set(changes) {
+      const structural = ('metric' in changes) || ('maxTrekkers' in changes) ||
+                         ('seed' in changes);
+      Object.assign(cfg, changes);
+      if (structural) rebuild();
+    },
+
+    reset() { rebuild(); },
+
+    tick(dt) {
+      if (!cfg.running) return;
+
+      for (const a of agents) {
+        if (a.status === 'off') continue;
+
+        switch (a.status) {
+          case 'climbing': {
+            const prev = a.t;
+            a.t += a.speed * dt;
+            totals.climbMinutes += dt / 6;          // 6s of sim = 1 "minute"
+            totals.distance += (a.t - prev) * 12;   // route is "12 km"
+
+            // cafe spend happens in passing, on the way through
+            if (!a.didCafe && a.engageCafe && a.t >= M.cafe) {
+              a.didCafe = true;
+              totals.revenue += SPEND.cafe;
+              totals.engaged++;
+              a.engagedAny = true;
+              spendEvents.push({ agentId: a.id, t: M.cafe, amount: SPEND.cafe,
+                                 where: 'cafe' });
+            }
+
+            // mid-climb rest, before the end-of-trek check so a rest point
+            // that coincides with the final stop does not swallow the stop
+            if (a.restIdx < a.restStops.length && a.t >= a.restStops[a.restIdx]) {
+              a.restIdx++;
+              a.status = 'resting';
+              a.timer = cfg.restPause;
+              break;
+            }
+
+            if (a.t >= a.stopAt) {
+              a.t = Math.min(a.stopAt, 1);
+              a.status = 'stopped';
+              a.timer = cfg.stopPause;
+
+              if (a.t >= 0.999) {
+                totals.summited++;
+                if (a.engageSummit) {
+                  totals.revenue += SPEND.souvenir;
+                  if (!a.engagedAny) totals.engaged++;
+                  a.engagedAny = true;
+                  spendEvents.push({ agentId: a.id, t: 1, amount: SPEND.souvenir,
+                                     where: 'summit' });
+                }
+                if (a.engagedAny) totals.nsmHits++;
+              } else {
+                totals.stoppedShort++;
+              }
+            }
+            break;
+          }
+          case 'resting':
+            a.timer -= dt;
+            if (a.timer <= 0) {
+              a.status = 'climbing';
+              totals.sessions++;       // resuming counts as a new session
+            }
+            break;
+          case 'stopped':
+            a.timer -= dt;
+            if (a.timer <= 0) { a.status = 'fading'; a.timer = cfg.fadeSeconds; }
+            break;
+          case 'fading':
+            a.timer -= dt;
+            a.visible = false;
+            if (a.timer <= 0) { a.status = 'waiting'; a.timer = cfg.respawnDelay; }
+            break;
+          case 'waiting':
+            a.timer -= dt;
+            if (a.timer <= 0) { spawn(a, a.id); }
+            break;
+        }
+      }
+    },
+  };
+}
+
+
+/* ===== trail.js ===== */
+/**
+ * The trail, in two segments:
+ *
+ * 1. TRAIL_UV - the path traced from the cursor video, as fractions of the
+ *    mountain's screen box. This part of the route is known-good.
+ * 2. A stair extension appended at runtime, carrying the route from where the
+ *    trace ended (the old summit position) up to the monastery's true
+ *    position, which the summit anchor pins exactly.
+ *
+ * The mapping is calibrated on the TRACED portion only: base anchor = first
+ * traced point, and the traced climb spans a fixed fraction of the full
+ * base-to-summit height. Calibrating on the extension's endpoint instead would
+ * let a guessed point stretch the entire known-good route.
+ */
+const TRAIL_UV = [
+  { u: 0.051, v: 0.9307 },
+  { u: 0.0776, v: 0.8901 },
+  { u: 0.0994, v: 0.8459 },
+  { u: 0.1185, v: 0.8003 },
+  { u: 0.1363, v: 0.7532 },
+  { u: 0.1532, v: 0.7058 },
+  { u: 0.1714, v: 0.6595 },
+  { u: 0.1855, v: 0.6106 },
+  { u: 0.2053, v: 0.5642 },
+  { u: 0.2352, v: 0.5267 },
+  { u: 0.2808, v: 0.5194 },
+  { u: 0.2808, v: 0.5016 },
+  { u: 0.3263, v: 0.5117 },
+  { u: 0.3714, v: 0.5182 },
+  { u: 0.4159, v: 0.5049 },
+  { u: 0.4612, v: 0.5145 },
+  { u: 0.5072, v: 0.5203 },
+  { u: 0.5475, v: 0.5177 },
+  { u: 0.5823, v: 0.5502 },
+  { u: 0.6024, v: 0.5214 },
+  { u: 0.6202, v: 0.4741 },
+  { u: 0.633, v: 0.4246 },
+  { u: 0.6536, v: 0.3802 },
+  { u: 0.6615, v: 0.3353 },
+];
+
+/**
+ * How much of the total base->summit rise the traced portion covers. The
+ * trace ended at the old, lower monastery; the rebuilt one sits higher. 0.72
+ * means: the trace climbs 72% of the way, the stair extension does the rest.
+ * If trekkers turn uphill too early or too late, this is the knob.
+ */
+const TRACED_CLIMB_FRACTION = 0.72;
+
+function buildTrail(anchors) {
+  const { baseX, baseY, summitX, summitY } = anchors;
+  const first = TRAIL_UV[0];
+  const last = TRAIL_UV[TRAIL_UV.length - 1];
+
+  // scale so the traced portion spans its fraction of the full climb
+  const sx = (summitX - baseX) * 0.92 / (last.u - first.u);
+  const sy = (summitY - baseY) * TRACED_CLIMB_FRACTION / (last.v - first.v);
+
+  const pts = TRAIL_UV.map(p => ({
+    x: baseX + (p.u - first.u) * sx,
+    y: baseY + (p.v - first.v) * sy,
+  }));
+
+  // stair extension: smooth curve from the trace's end to the exact summit
+  const end = pts[pts.length - 1];
+  const STAIR_STEPS = 6;
+  for (let i = 1; i <= STAIR_STEPS; i++) {
+    const f = i / STAIR_STEPS;
+    const ease = f * f * (3 - 2 * f);              // smoothstep: steepens in
+    pts.push({
+      x: end.x + (summitX - end.x) * f,
+      y: end.y + (summitY - end.y) * ease,
+    });
+  }
+
+  // arc-length parameterisation for constant speed
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x,
+                                     pts[i].y - pts[i - 1].y));
+  }
+  const total = cum[cum.length - 1];
+
+  return {
+    totalLength: total,
+    points: pts,
+    at(t) {
+      const d = Math.min(Math.max(t, 0), 1) * total;
+      let i = 1;
+      while (i < cum.length - 1 && cum[i] < d) i++;
+      const f = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
+      return {
+        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f,
+        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f,
+      };
+    },
+  };
+}
+
+
+/**
+ * Build the trail directly through explicit points (Spline waypoint objects).
+ * Same interface as buildTrail, but no uv mapping and no anchors: the points
+ * ARE the route. A Catmull-Rom pass smooths the corners so trekkers do not
+ * turn on a dime at each waypoint.
+ */
+function buildTrailFromPoints(raw, smoothing = 8) {
+  if (raw.length < 2) throw new Error('[trail] need at least 2 points');
+
+  // Catmull-Rom through the waypoints
+  const pts = [];
+  const P = (i) => raw[Math.min(Math.max(i, 0), raw.length - 1)];
+  for (let i = 0; i < raw.length - 1; i++) {
+    const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+    for (let s = 0; s < smoothing; s++) {
+      const t = s / smoothing, t2 = t * t, t3 = t2 * t;
+      pts.push({
+        x: 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t +
+             (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+             (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+        y: 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t +
+             (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+             (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+      });
+    }
+  }
+  pts.push({ x: raw[raw.length - 1].x, y: raw[raw.length - 1].y });
+
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x,
+                                     pts[i].y - pts[i - 1].y));
+  }
+  const total = cum[cum.length - 1];
+
+  return {
+    totalLength: total,
+    points: pts,
+    at(t) {
+      const d = Math.min(Math.max(t, 0), 1) * total;
+      let i = 1;
+      while (i < cum.length - 1 && cum[i] < d) i++;
+      const f = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
+      return {
+        x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f,
+        y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f,
+      };
+    },
+  };
+}
+
+
+/* ===== controls.js ===== */
+
+/**
+ * The control panel, rendered into named slots so the page can place the
+ * pieces around the 3D stage rather than stacking them all beneath it.
+ *
+ * Talks only to sim.set() - never to the scene or the trekker objects. That
+ * separation is what would let a 2D renderer reuse this panel unchanged.
+ */
+function createControls(sim, slots) {
+  const { nsm, metric, stats, buttons } = slots;
+
+  // ---- North Star card (left of the stage) --------------------------------
+  nsm.innerHTML = `
+    <div class="tc-card tc-card--nsm">
+      <div class="tc-card-label">North Star</div>
+      <div class="tc-card-name">${NSM_LABEL}</div>
+      <div class="tc-card-value tc-nsm-value">—</div>
+      <div class="tc-card-def">Reached the summit <em>and</em> spent something,
+        over everyone who started.</div>
+    </div>`;
+  const nsmValue = nsm.querySelector('.tc-nsm-value');
+
+  // ---- chosen metric card (right of the stage) ----------------------------
+  metric.innerHTML = `
+    <div class="tc-card tc-card--metric">
+      <div class="tc-card-label">Chosen metric</div>
+      <div class="tc-card-name"></div>
+      <div class="tc-card-value">—</div>
+      <div class="tc-card-def"></div>
+    </div>`;
+  const cardName = metric.querySelector('.tc-card-name');
+  const cardValue = metric.querySelector('.tc-card-value');
+  const cardDef = metric.querySelector('.tc-card-def');
+
+  // ---- stats strip (between stage and buttons) ----------------------------
+  stats.innerHTML = `<div class="tc-stats"></div>`;
+  const statsBox = stats.querySelector('.tc-stats');
+
+  // ---- buttons + blurb ----------------------------------------------------
+  buttons.innerHTML = `
+    <div class="tc-label">Choose the primary metric</div>
+    <div class="tc-metrics"></div>
+    <div class="tc-blurb"></div>
+    <div class="tc-buttons">
+      <button class="tc-toggle">Pause</button>
+      <button class="tc-reset">Restart</button>
+    </div>`;
+  const metricsBox = buttons.querySelector('.tc-metrics');
+  const blurb = buttons.querySelector('.tc-blurb');
+  const btns = {};
+
+  for (const [key, m] of Object.entries(METRICS)) {
+    const b = document.createElement('button');
+    b.textContent = m.label;
+    b.className = 'tc-metric';
+    b.onclick = () => selectMetric(key);
+    metricsBox.appendChild(b);
+    btns[key] = b;
+  }
+
+  function selectMetric(key) {
+    sim.set({ metric: key });
+    for (const [k, b] of Object.entries(btns)) {
+      b.classList.toggle('is-active', k === key);
+    }
+    const m = METRICS[key];
+    blurb.textContent = m.blurb;
+    cardName.textContent = m.label;
+    cardDef.textContent = m.definition;
+    render();
+  }
+
+  const toggle = buttons.querySelector('.tc-toggle');
+  toggle.onclick = () => {
+    const running = !sim.config.running;
+    sim.set({ running });
+    toggle.textContent = running ? 'Pause' : 'Play';
+  };
+  buttons.querySelector('.tc-reset').onclick = () => { sim.reset(); render(); };
+
+  const fmt = (n, d = 0) => n.toLocaleString('en-IN',
+    { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  function render() {
+    const mv = sim.metricValue();
+    cardValue.textContent = `${fmt(mv.value, mv.decimals ?? 0)} ${mv.unit}`;
+
+    const pct = sim.nsm() * 100;
+    nsmValue.textContent = `${pct.toFixed(0)}%`;
+    nsmValue.classList.toggle('is-poor', pct < 25);
+
+    const t = sim.totals;
+    statsBox.innerHTML =
+      `<span><b>${t.started}</b> started</span>` +
+      `<span><b>${t.summited}</b> summited</span>` +
+      `<span><b>${t.stoppedShort}</b> stopped short</span>` +
+      `<span><b>${t.engaged}</b> spent something</span>` +
+      `<span><b>${fmt(t.revenue)}</b> coins earned</span>`;
+  }
+
+  selectMetric(sim.config.metric);
+  return { render };
+}
+
+
+/* ===== main.js ===== */
+
+// ---------------------------------------------------------------- CONFIG --
+const CONFIG = {
+  // Your scene URL from Spline: Export -> Code -> Web Content. Ends in
+  // .splinecode. The editor URL (app.spline.design/file/...) will NOT work.
+  sceneUrl: 'PASTE_YOUR_SCENE_URL_HERE',
+
+  // Spline coordinates of the trail's two ends.
+  // baseX/baseY: where trekker1 stands at the bottom (its Position in Spline).
+  // summitX/summitY: the monastery platform's Position.
+  anchors: {
+    baseX: -1736, baseY: -630,      // CONFIRM from trekker1's Transform panel
+    summitX: 1200, summitY: 900,    // REPLACE with the monastery's Position
+  },
+
+  trekkerNames: ['trekker1','trekker2','trekker3','trekker4',
+                 'trekker5','trekker6','trekker7','trekker8'],
+
+  // Waypoint objects in the Spline scene, matched by name and sorted by their
+  // number. Any object whose name fits works: Waypoint_00_Base,
+  // Waypoint 3, waypoint_12_bridge, etc. When 2+ are found, the trail runs
+  // through THEM and the traced path + anchors above are ignored entirely.
+  waypointPattern: /^waypoint[_\s]*(\d+)/i,
+
+  climbSeconds: 13,     // fixed pace; no longer user-adjustable
+
+  // The canvas is always rendered at this size, then scaled to fit. It must be
+  // wide enough that Spline's fixed camera framing shows the whole mountain -
+  // i.e. the width at which the scene already looks right on desktop.
+  stageWidth: 1280,
+  stageHeight: 720,
+
+  // Below this width the canvas is rendered at stageWidth and scaled down, so
+  // the whole mountain stays in frame. Above it, the canvas fills the stage
+  // normally - desktop keeps exactly the behaviour it had.
+  scaleBelow: 900,
+
+  // The scene sits inside a lot of empty cream at 1280x720, so a plain fit
+  // leaves the mountain looking small. These enlarge it and crop the margins:
+  // mobileFill scales past the container width, mobileKeepY is the fraction of
+  // the frame height retained (the rest is empty sky and ground).
+  mobileFill: 1.28,
+  mobileKeepY: 0.74,
+
+
+  // Preserved on every frame. Your trekkers face along +X with Y=90; if they
+  // end up backwards, this is the number to change.
+  yawDegrees: 90,
+};
+
+// (the on-screen status element was removed; say() logs to the console)
+// Status goes to the console only: the on-screen line was a development aid
+// and has no place in the published piece.
+const say = (m) => { console.log(m); };
+
+let walkAmp = 0.7, kneeAmp = 0.45;   // set at load once units are known
+
+const canvas = document.getElementById('canvas3d');
+const app = new Application(canvas);
+
+/* Kick the scene download off immediately, in parallel with the module
+   graph resolving and the DOM work below. The browser dedupes this against
+   the runtime's own request, so the bytes are already in flight - and often
+   already cached - by the time app.load runs. */
+if (!CONFIG.sceneUrl.startsWith('PASTE')) {
+  const l = document.createElement('link');
+  l.rel = 'preload'; l.as = 'fetch'; l.crossOrigin = 'anonymous';
+  l.href = CONFIG.sceneUrl;
+  document.head.appendChild(l);
+}
+
+async function init() {
+  if (CONFIG.sceneUrl.startsWith('PASTE')) {
+    say('Open main.js and paste your scene URL into CONFIG.sceneUrl.');
+    return;
+  }
+
+  say('Loading Spline scene...');
+  await app.load(CONFIG.sceneUrl);
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.classList.add('is-done');
+    setTimeout(() => loader.remove(), 500);
+  }
+  say('');
+
+  // Belt and braces alongside the CSS: ask the runtime to drop its camera
+  // controls too, so no future CSS change can accidentally re-enable
+  // scroll-to-zoom over the graphic.
+  try {
+    if (app.setVariable) { /* no-op guard for older runtimes */ }
+    const ctrl = app._controls || app.controls;
+    if (ctrl) {
+      if ('enabled' in ctrl) ctrl.enabled = false;
+      if ('enableZoom' in ctrl) ctrl.enableZoom = false;
+      if ('enableRotate' in ctrl) ctrl.enableRotate = false;
+      if ('enablePan' in ctrl) ctrl.enablePan = false;
+      console.log('[harness] Spline camera controls disabled');
+    }
+  } catch (e) { /* CSS already covers this */ }
+
+  /* Keep the canvas at its design size and scale the element to fit.
+     Spline reads the canvas's own width/height to frame the camera, so the
+     canvas must stay large; only its on-screen presentation shrinks. */
+  const stage = document.querySelector('.trek-stage');
+  function fitStage() {
+    const avail = stage.clientWidth || window.innerWidth;
+
+    if (window.innerWidth >= CONFIG.scaleBelow) {
+      // desktop: hand the canvas back to plain CSS
+      stage.classList.remove('is-scaled');
+      canvas.style.width = '';
+      canvas.style.height = '';
+      canvas.style.transform = '';
+      canvas.style.position = '';
+      canvas.style.left = '';
+      canvas.style.top = '';
+      stage.style.height = '';
+      return;
+    }
+
+    stage.classList.add('is-scaled');
+
+    // Scale past the container so the mountain fills the width, then crop the
+    // empty margins by offsetting and shortening the stage.
+    const scale = (avail / CONFIG.stageWidth) * CONFIG.mobileFill;
+    const drawnW = CONFIG.stageWidth * scale;
+    const drawnH = CONFIG.stageHeight * scale;
+    const keptH = drawnH * CONFIG.mobileKeepY;
+
+    canvas.style.width = CONFIG.stageWidth + 'px';
+    canvas.style.height = CONFIG.stageHeight + 'px';
+    canvas.style.position = 'absolute';
+    canvas.style.left = ((avail - drawnW) / 2) + 'px';
+    canvas.style.top = (-(drawnH - keptH) / 2) + 'px';
+    canvas.style.transform = `scale(${scale})`;
+    stage.style.height = keptH + 'px';
+  }
+  fitStage();
+  window.addEventListener('resize', fitStage);
+  // Spline resets canvas styles as it initialises, so re-apply once it settles
+  setTimeout(fitStage, 60);
+  setTimeout(fitStage, 400);
+
+  /* No programmatic zoom here on purpose.
+     app.setZoom is not a "fit to viewport" control - passing a ratio to it
+     zooms the camera in hard. Fitting the scene is a scene-level setting:
+     turn Auto Zoom ON in Spline (Scene panel) and re-export, and the runtime
+     frames the whole mountain at any viewport size by itself. */
+
+  // one flat list of every scene object; used by trekkers, bones, waypoints
+  const all = app.getAllObjects ? app.getAllObjects() : [];
+
+  // find the trekkers
+  const trekkers = [];
+  for (const name of CONFIG.trekkerNames) {
+    const obj = app.findObjectByName(name);
+    if (obj) trekkers.push({ name, obj });
+    else console.warn(`[harness] no object named "${name}" in the scene`);
+  }
+  if (trekkers.length === 0) {
+    say('No trekkers found - check the names in CONFIG.trekkerNames.');
+    // print what does exist, to correct the names against
+    console.log('[harness] scene objects:',
+      app.getAllObjects ? app.getAllObjects().map(o => o.name) : '(api unavailable)');
+    return;
+  }
+  console.log(`[harness] driving ${trekkers.length} trekkers`);
+
+  // remember each trekker's authored Z and rotation so we never disturb them
+  for (const t of trekkers) {
+    t.z = t.obj.position.z;
+    t.rot = { x: t.obj.rotation.x, y: t.obj.rotation.y, z: t.obj.rotation.z };
+    t.scale = { x: t.obj.scale.x, y: t.obj.scale.y, z: t.obj.scale.z };
+    t.phase = Math.random() * Math.PI * 2;   // desync strides across trekkers
+    t.bones = null;
+  }
+
+  // ---- bones for the walk ------------------------------------------------
+  // Spline's editor states cannot record child-bone poses, but the runtime
+  // can rotate the bones directly - which is all a walk cycle is.
+  //
+  // Wrinkle: every trekker's bones share the same names (L_Thigh x8), and
+  // findObjectByName returns only the first. getAllObjects lists them all,
+  // in scene-tree order, so occurrences group per trekker: the i-th L_Thigh
+  // belongs to the i-th trekker. That assumption is logged and checked.
+  const BONES = ['L_Thigh', 'R_Thigh', 'L_Calf', 'R_Calf'];
+  const boneLists = {};
+  for (const b of BONES) {
+    boneLists[b] = all.filter(o => o.name === b);
+  }
+  console.log('[walk] bone counts:',
+    BONES.map(b => b + '=' + boneLists[b].length).join('  '),
+    '(expect ' + trekkers.length + ' of each)');
+
+  const boneCountsOk = BONES.every(b => boneLists[b].length === trekkers.length);
+  if (boneCountsOk) {
+    for (let i = 0; i < trekkers.length; i++) {
+      const set = {};
+      for (const b of BONES) {
+        const bone = boneLists[b][i];
+        // capture the rest pose; swings are offsets from THIS, so it works
+        // whether the runtime reports radians or degrees
+        set[b] = { bone, rest: bone.rotation.x };
+      }
+      trekkers[i].bones = set;
+    }
+    // Detect units: the editor showed rest ~180 for the thighs. In radians
+    // that's ~3.14. Whichever magnitude we see decides the swing amplitude.
+    const sample = Math.abs(trekkers[0].bones['L_Thigh'].rest);
+    const RAD = sample < 10;
+    walkAmp = RAD ? 0.7 : 40;         // ~40 degrees either way
+    kneeAmp = RAD ? 0.45 : 26;
+    console.log('[walk] rest sample ' + sample.toFixed(2) +
+      ' -> treating rotations as ' + (RAD ? 'radians' : 'degrees'));
+  } else {
+    console.warn('[walk] bone counts do not line up per trekker - walking ' +
+      'disabled, trekkers will glide. Positions still work.');
+  }
+
+  // Prefer waypoints placed in the scene: exact, editable in Spline, no
+  // anchor calibration. Fall back to the traced path only if none exist.
+  const wps = [];
+  for (const o of all) {
+    const m = o.name && o.name.match(CONFIG.waypointPattern);
+    if (m) wps.push({ order: parseInt(m[1], 10), name: o.name,
+                      x: o.position.x, y: o.position.y });
+  }
+  wps.sort((a, b) => a.order - b.order);
+
+  // The waypoints are route data, not scenery: hide every matching object so
+  // the black cubes disappear from the render while their positions keep
+  // steering the trail.
+  let hidden = 0;
+  for (const o of all) {
+    if (o.name && CONFIG.waypointPattern.test(o.name)) { o.visible = false; hidden++; }
+  }
+  if (hidden) console.log('[harness] hid ' + hidden + ' waypoint markers');
+
+  let trail;
+  if (wps.length >= 2) {
+    console.log('[harness] using ' + wps.length + ' waypoints from the scene:');
+    console.log('   ' + wps.map(w => w.name).join(' -> '));
+    trail = buildTrailFromPoints(wps.map(w => ({ x: w.x, y: w.y })));
+  } else {
+    console.warn('[harness] fewer than 2 waypoint objects found - falling ' +
+                 'back to the traced path. Scene objects: ' +
+                 all.map(o => o.name).filter(Boolean).slice(0, 40).join(', '));
+    trail = buildTrail(CONFIG.anchors);
+  }
+  console.log(`[harness] trail length ${trail.totalLength.toFixed(0)} spline units`);
+
+  const sim = createSim({
+    maxTrekkers: trekkers.length,
+    climbSeconds: CONFIG.climbSeconds,
+    metric: 'base_starts',
+  });
+
+  // Controls talk only to the sim. They never touch the scene, which is what
+  // lets the same panel drive a different renderer later.
+  const ui = createControls(sim, {
+    nsm: document.getElementById('nsm-slot'),
+    metric: document.getElementById('metric-slot'),
+    stats: document.getElementById('stats-slot'),
+    buttons: document.getElementById('buttons-slot'),
+  });
+  let statsClock = 0;
+
+  let last = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+
+    sim.tick(dt);
+
+    statsClock += dt;
+    if (statsClock > 0.25) { ui.render(); statsClock = 0; }
+
+    for (let i = 0; i < trekkers.length; i++) {
+      const t = trekkers[i];
+      const a = sim.agents[i];
+
+      // more rigs than active agents (e.g. distance/user starts only 3):
+      // park the spares out of sight
+      if (!a || a.status === 'off') { t.obj.visible = false; continue; }
+
+      const p = trail.at(a.t);
+      t.obj.position.x = p.x;
+      t.obj.position.y = p.y;
+      t.obj.position.z = t.z;                       // depth stays authored
+
+      // walk cycle: stride phase advances with time while climbing
+      if (t.bones && a.status === 'climbing') {
+        t.phase += dt * 2 * Math.PI * 1.6;          // ~1.6 strides per second
+        const s1 = Math.sin(t.phase);
+        const s2 = Math.sin(t.phase + Math.PI);
+        t.bones['L_Thigh'].bone.rotation.x = t.bones['L_Thigh'].rest + s1 * walkAmp;
+        t.bones['R_Thigh'].bone.rotation.x = t.bones['R_Thigh'].rest + s2 * walkAmp;
+        // trailing knee bends on push-off
+        t.bones['L_Calf'].bone.rotation.x = t.bones['L_Calf'].rest + Math.max(0, s2) * kneeAmp;
+        t.bones['R_Calf'].bone.rotation.x = t.bones['R_Calf'].rest + Math.max(0, s1) * kneeAmp;
+        // stride bob on the whole body
+        t.obj.position.y = p.y + Math.abs(s1) * 6;
+      } else if (t.bones) {
+        for (const b of Object.values(t.bones)) b.bone.rotation.x = b.rest;
+      }
+
+      // visibility for the summit fade. The runtime exposes .visible on
+      // objects; opacity per-object is less reliable, so we blink out at the
+      // midpoint of the fade rather than fading alpha.
+      t.obj.visible = a.visible;
+    }
+  }
+  requestAnimationFrame(frame);
+  say(`${trekkers.length} trekkers on the trail.`);
+}
+
+init().catch(err => {
+  console.error('[harness] failed:', err);
+  say('Load failed - see console.');
+});
+
+</script>
+</body>
+</html>
