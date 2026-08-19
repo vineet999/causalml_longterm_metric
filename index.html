@@ -173,42 +173,5 @@
     </div>
   </div>
   <script type="module" src="./main.js"></script>
-
-  <!-- ------------------------------------------------------------------ -->
-  <!-- Auto-height for iframe embedding.
-       When this page is framed inside an article (e.g. on humblefork.in),
-       a fixed iframe height can't fit both desktop and mobile, because the
-       scaled canvas and the wrapping button labels produce genuinely
-       different content heights at different widths - and the narrative
-       blurb changes length when a metric preset is chosen.
-
-       So the page measures its own full height and posts it up to the
-       parent, which sizes the iframe to match. The ResizeObserver re-reports
-       on every content change (preset switch, orientation, font reflow), so
-       the frame tracks the content live. Harmless when NOT framed: with no
-       parent listener, the messages simply go unheard. -->
-  <script>
-    (function () {
-      var lastH = 0;
-      function postHeight() {
-        // scrollHeight of the documentElement is the full content height,
-        // including the cream padding around .trek-app.
-        var h = Math.ceil(document.documentElement.scrollHeight);
-        if (h === lastH) return;              // don't spam identical values
-        lastH = h;
-        parent.postMessage({ type: 'trek-height', height: h }, '*');
-      }
-      window.addEventListener('load', postHeight);
-      window.addEventListener('resize', postHeight);
-      if (window.ResizeObserver) {
-        new ResizeObserver(postHeight).observe(document.body);
-      }
-      // The 3D scene and the injected controls settle a beat after load,
-      // so re-measure a couple of times to catch the final layout.
-      setTimeout(postHeight, 300);
-      setTimeout(postHeight, 1200);
-      setTimeout(postHeight, 2500);
-    })();
-  </script>
 </body>
 </html>
