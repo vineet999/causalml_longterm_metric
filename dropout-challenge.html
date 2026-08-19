@@ -66,7 +66,13 @@
   .trek-stage { touch-action: pan-y; }
   /* A quiet placeholder beats an empty cream rectangle: it tells the reader
      something is coming, which is most of what perceived speed is. */
-  #loader { position: absolute; inset: 0; display: flex; flex-direction: column;
+  /* The poster sits above the canvas until the real scene is ready. */
+  .stage-poster { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; object-position: center;
+    transition: opacity .45s ease; z-index: 1; }
+  .stage-poster.is-done { opacity: 0; pointer-events: none; }
+
+  #loader { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px;
     background: var(--bg); transition: opacity .45s ease; }
   #loader.is-done { opacity: 0; pointer-events: none; }
@@ -844,6 +850,17 @@ const CONFIG = {
   mobileFill: 1.28,
   mobileKeepY: 0.74,
 
+  // Hold the scene download until the tool is near the viewport. In a long
+  // article that means the page becomes readable immediately and the ~MBs of
+  // 3D only cost anything for readers who actually scroll this far.
+  lazyLoad: true,
+  lazyMargin: '600px',      // start loading this far before it comes into view
+
+  // Optional still of the mountain, shown instantly while the scene loads.
+  // Drop a poster.jpg next to this file - a ~60 KB screenshot beats several MB
+  // of geometry for the first paint, and most readers never notice the swap.
+  posterUrl: 'poster.jpg',
+
 
   // Preserved on every frame. Your trekkers face along +X with Y=90; if they
   // end up backwards, this is the number to change.
@@ -864,11 +881,44 @@ const app = new Application(canvas);
    graph resolving and the DOM work below. The browser dedupes this against
    the runtime's own request, so the bytes are already in flight - and often
    already cached - by the time app.load runs. */
-if (!CONFIG.sceneUrl.startsWith('PASTE')) {
+if (!CONFIG.lazyLoad && !CONFIG.sceneUrl.startsWith('PASTE')) {
   const l = document.createElement('link');
   l.rel = 'preload'; l.as = 'fetch'; l.crossOrigin = 'anonymous';
   l.href = CONFIG.sceneUrl;
   document.head.appendChild(l);
+}
+
+/** Show a still immediately so the reader is never looking at an empty box. */
+function showPoster() {
+  if (!CONFIG.posterUrl) return null;
+  const stage = document.querySelector('.trek-stage');
+  const img = document.createElement('img');
+  img.src = CONFIG.posterUrl;
+  img.alt = '';
+  img.className = 'stage-poster';
+  img.onerror = () => img.remove();        // no poster file: fail quietly
+  stage.appendChild(img);
+  return img;
+}
+
+/** Resolve once the tool is near the viewport, so nothing heavy runs before.
+ *  Races against a timeout: if the observer never fires - no support, a zero
+ *  height container, an odd embedding context - the scene must still load
+ *  rather than leaving the reader on a permanent loading bar. */
+function whenVisible(el, margin, timeoutMs = 2500) {
+  if (!el || !('IntersectionObserver' in window)) return Promise.resolve();
+  return Promise.race([
+    new Promise(resolve => {
+      const io = new IntersectionObserver((entries) => {
+        if (entries.some(e => e.isIntersecting)) { io.disconnect(); resolve(); }
+      }, { rootMargin: margin });
+      io.observe(el);
+    }),
+    new Promise(resolve => setTimeout(() => {
+      console.warn('[harness] visibility check timed out - loading anyway');
+      resolve();
+    }, timeoutMs)),
+  ]);
 }
 
 async function init() {
@@ -877,8 +927,19 @@ async function init() {
     return;
   }
 
+  const poster = showPoster();
+
+  if (CONFIG.lazyLoad) {
+    await whenVisible(document.querySelector('.trek-stage'), CONFIG.lazyMargin);
+  }
+
   say('Loading Spline scene...');
   await app.load(CONFIG.sceneUrl);
+
+  if (poster) {
+    poster.classList.add('is-done');
+    setTimeout(() => poster.remove(), 500);
+  }
   const loader = document.getElementById('loader');
   if (loader) {
     loader.classList.add('is-done');
@@ -1120,7 +1181,14 @@ async function init() {
 
 init().catch(err => {
   console.error('[harness] failed:', err);
-  say('Load failed - see console.');
+  // Removing the status line left failures completely silent, so a broken
+  // load looked identical to a slow one. Surface it in the loader instead.
+  const l = document.getElementById('loader');
+  if (l) {
+    l.classList.remove('is-done');
+    l.innerHTML = '<div class="loader-text">The 3D scene could not load. ' +
+                  'Details are in the browser console.</div>';
+  }
 });
 
 </script>
