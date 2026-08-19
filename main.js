@@ -43,8 +43,14 @@ const CONFIG = {
   // leaves the mountain looking small. These enlarge it and crop the margins:
   // mobileFill scales past the container width, mobileKeepY is the fraction of
   // the frame height retained (the rest is empty sky and ground).
-  mobileFill: 1.5,
-  mobileKeepY: 0.64,
+  // 1.0 = the whole frame fits the width, nothing cropped horizontally.
+  // Anything above that trades the mountain's edges for size, which is what
+  // clipped the base and the monastery at 1.5.
+  mobileFill: 1.0,
+  // Fraction of the frame height kept. The scene has empty sky above and a
+  // little ground below, so trimming ~12% enlarges it without touching the
+  // peak or the base.
+  mobileKeepY: 0.88,
 
   // Render fewer pixels on phones. The camera framing depends on the canvas
   // ASPECT, not its size, so halving the resolution changes nothing visually
