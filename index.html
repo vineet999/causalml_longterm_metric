@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dropout Challenge</title>
+
+<!-- Open the TLS connections to the CDNs while the HTML is still parsing, so
+     the runtime and the scene start downloading a few hundred ms sooner. -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://prod.spline.design" crossorigin>
+<link rel="dns-prefetch" href="https://prod.spline.design">
+<link rel="modulepreload"
+      href="https://unpkg.com/@splinetool/runtime@1.9.28/build/runtime.js"
+      crossorigin>
+<style>
+  :root {
+    --bg: #F0ECE3;
+    --panel: #FFFFFF;
+    --panel-alt: #FAF7F1;
+    --ink: #3E352C;
+    --muted: #8A7B6C;
+    --line: #DCD3C6;
+    --accent: #7A6448;
+    --good: #2F6B4F;
+    --poor: #B4483C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+
+  .trek-app { width: 100%; max-width: 1280px; margin: 0 auto; padding: 16px; }
+
+  /* ---------- stage ----------
+     Spline frames the camera to the canvas's PIXEL size, so a narrow canvas
+     crops the mountain rather than shrinking it - which is why CSS aspect
+     ratios alone could never fix the phone view.
+
+     Instead the canvas is held at a fixed desktop size (so Spline always
+     renders the full scene it was framed for) and the whole element is scaled
+     down with a CSS transform to fit whatever width is available. transform
+     does not change clientWidth, so Spline never notices. */
+  /* Desktop: canvas simply fills the stage, as it always did. */
+  .trek-stage { position: relative; width: 100%; aspect-ratio: 16 / 9;
+    overflow: hidden; }
+  #canvas3d { width: 100%; height: 100%; transform-origin: top left; }
+
+  /* Mobile only: the stage height is set in JS to match the scaled canvas,
+     so the aspect-ratio rule must not fight it. */
+  .trek-stage.is-scaled { aspect-ratio: auto; }
+
+  /* ---------- readouts, side by side below the buttons ---------- */
+  .trek-readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  /* The Spline runtime binds its own camera controls to the canvas, so scroll
+     becomes zoom and drag becomes orbit - which hijacks the page as soon as the
+     pointer crosses the graphic. All real interaction lives in the HTML buttons,
+     so the canvas does not need pointer input at all: turning it off lets scroll
+     and swipe pass straight through to the page. */
+  #canvas3d { display: block; pointer-events: none; touch-action: pan-y; }
+  .trek-stage { touch-action: pan-y; }
+  /* A quiet placeholder beats an empty cream rectangle: it tells the reader
+     something is coming, which is most of what perceived speed is. */
+  #loader { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    background: var(--bg); transition: opacity .45s ease; }
+  #loader.is-done { opacity: 0; pointer-events: none; }
+  .loader-bar { width: min(210px, 45%); height: 3px; background: var(--line);
+    border-radius: 2px; overflow: hidden; }
+  .loader-bar i { display: block; height: 100%; width: 35%; border-radius: 2px;
+    background: var(--accent); animation: slide 1.15s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); }
+                     100% { transform: translateX(390%); } }
+  .loader-text { font-size: 12.5px; color: var(--muted); letter-spacing: .02em; }
+
+  #status { position: absolute; left: 8px; bottom: 8px;
+    font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--muted);
+    background: rgba(255,255,255,.7); padding: 3px 6px; border-radius: 3px; }
+
+  /* ---------- readout cards ---------- */
+  .tc-card { border: 1px solid var(--line); border-radius: 10px;
+    padding: 15px 16px; background: var(--panel); }
+  .tc-card--nsm { background: var(--panel-alt); border-color: #CFC3B0; }
+  .tc-card-label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--muted); }
+  .tc-card-name { font-size: 13px; margin-top: 3px; line-height: 1.35; }
+  .tc-card-value { font-size: 34px; line-height: 1.1; margin: 8px 0 5px;
+    font-variant-numeric: tabular-nums; color: var(--accent); }
+  .tc-card--nsm .tc-card-value { color: var(--good); }
+  .tc-card--nsm .tc-card-value.is-poor { color: var(--poor); }
+  .tc-card-def { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .tc-card-def em { font-style: italic; }
+
+  /* ---------- stats strip, between stage and buttons ---------- */
+  .tc-stats { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center;
+    font-size: 13px; color: var(--muted);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 13px 4px; margin: 16px 0; }
+  .tc-stats span { display: flex; align-items: baseline; gap: 6px; }
+  .tc-stats b { color: var(--ink); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- metric buttons ---------- */
+  .tc-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 9px; text-align: center; }
+  /* A 12-column grid gives an exact 4 + 3 split: four buttons spanning 3
+     columns fill row one, three spanning 4 columns fill row two. Both rows end
+     flush, which flex-wrap cannot guarantee with uneven label lengths. */
+  .tc-metrics { display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px; }
+  .tc-metric:nth-child(-n+4) { grid-column: span 3; }
+  .tc-metric:nth-child(n+5)  { grid-column: span 4; }
+  .tc-metric { font: inherit; font-size: 14px; padding: 9px 12px; cursor: pointer;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 999px; text-align: center; line-height: 1.3;
+    transition: background .15s, border-color .15s, color .15s; }
+  .tc-metric:hover { border-color: var(--accent); }
+  .tc-metric.is-active { background: var(--accent); border-color: var(--accent);
+    color: #fff; }
+
+  .tc-blurb { margin: 14px auto 0; font-size: 14px; line-height: 1.6;
+    color: var(--muted); max-width: 64ch; text-align: center; min-height: 2.9em; }
+
+  .tc-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+  .tc-buttons button { font: inherit; font-size: 13px; padding: 7px 16px;
+    cursor: pointer; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink); }
+  .tc-buttons button:hover { border-color: var(--accent); }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 860px) {
+    .trek-app { padding: 12px; }
+    .trek-readout { gap: 10px; margin-top: 16px; }
+    .tc-card { padding: 12px 13px; }
+    .tc-card-value { font-size: 27px; }
+    .tc-card-def { display: none; }   /* the number and its name carry it */
+    .tc-stats { gap: 14px 18px; justify-content: center; }
+    .tc-metric { font-size: 12.5px; padding: 8px 8px; }
+  }
+  @media (max-width: 620px) {
+    /* Four across on a phone leaves ~80px per button, so labels like
+       "# Summit completions" wrap to four lines. Two across keeps them
+       readable and still avoids the full-width stack. */
+    .tc-metrics { grid-template-columns: 1fr 1fr; }
+    .tc-metric:nth-child(-n+4), .tc-metric:nth-child(n+5) { grid-column: span 1; }
+    .tc-metric:last-child { grid-column: 1 / -1; }   /* odd one out, full width */
+    .tc-stats { font-size: 12px; }
+    .tc-stats b { font-size: 16px; }
+    /* keep the two cards side by side even on the narrowest phones: reading
+       the chosen metric against the North Star is the whole point, and
+       stacking them puts one off screen */
+    .trek-readout { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tc-card { padding: 10px 11px; }
+    .tc-card-value { font-size: 22px; }
+    .tc-card-name { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="trek-app">
+    <div class="trek-stage">
+      <canvas id="canvas3d"></canvas>
+      <div id="loader"><div class="loader-bar"><i></i></div>
+        <div class="loader-text">Loading the mountain…</div></div>
+      <div id="status"></div>
+    </div>
+
+    <div id="stats-slot"></div>
+    <div id="buttons-slot"></div>
+
+    <div class="trek-readout">
+      <div id="metric-slot"></div>
+      <div id="nsm-slot"></div>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
