@@ -1,4 +1,4 @@
-import { METRICS, NSM_LABEL } from './sim.js';
+import { METRICS, NSM_LABEL, DEFAULT_SCENARIO } from './sim.js';
 
 /**
  * The control panel, rendered into named slots so the page can place the
@@ -84,7 +84,9 @@ export function createControls(sim, slots) {
 
   function render() {
     const mv = sim.metricValue();
-    cardValue.textContent = `${fmt(mv.value, mv.decimals ?? 0)} ${mv.unit}`;
+    cardValue.textContent = mv.value === null
+      ? '—'
+      : `${fmt(mv.value, mv.decimals ?? 0)} ${mv.unit}`;
 
     const pct = sim.nsm() * 100;
     nsmValue.textContent = `${pct.toFixed(0)}%`;
@@ -99,6 +101,12 @@ export function createControls(sim, slots) {
       `<span><b>${fmt(t.revenue)}</b> coins earned</span>`;
   }
 
-  selectMetric(sim.config.metric);
+  // Open with nothing selected: no button lit, the card showing a dash, and a
+  // prompt where the explanation will go.
+  cardName.textContent = 'None chosen yet';
+  cardDef.textContent = '';
+  blurb.textContent = DEFAULT_SCENARIO.blurb;
+  render();
+
   return { render };
 }

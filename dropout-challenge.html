@@ -133,6 +133,21 @@
     border-radius: 6px; color: var(--ink); }
   .tc-buttons button:hover { border-color: var(--accent); }
 
+  /* ---------- essay ----------
+     Measure is capped near 68 characters: comfortable for continuous reading,
+     and narrower than the tool above it so the prose reads as commentary on
+     the simulation rather than as another panel of it. */
+  .trek-essay { max-width: 68ch; margin: 34px auto 8px; padding: 0 2px;
+    font-size: 16.5px; line-height: 1.72; color: #4A4038; }
+  .trek-essay p { margin: 0 0 17px; }
+  .trek-essay strong { color: var(--ink); font-weight: 600; }
+  .trek-essay h3 { font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin: 30px 0 13px; }
+  .trek-essay .lede { font-size: 18.5px; line-height: 1.6; color: var(--ink);
+    border-left: 3px solid var(--accent); padding-left: 16px; margin: 24px 0; }
+  .trek-essay .fork { margin-top: 28px; padding-top: 18px;
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 15.5px; }
+
   /* ---------- mobile ---------- */
   @media (max-width: 860px) {
     .trek-app { padding: 12px; }
@@ -142,6 +157,8 @@
     .tc-card-def { display: none; }   /* the number and its name carry it */
     .tc-stats { gap: 14px 18px; justify-content: center; }
     .tc-metric { font-size: 12.5px; padding: 8px 8px; }
+    .trek-essay { font-size: 16px; line-height: 1.7; margin-top: 26px; }
+    .trek-essay .lede { font-size: 17px; padding-left: 13px; }
   }
   @media (max-width: 620px) {
     /* Four across on a phone leaves ~80px per button, so labels like
@@ -177,6 +194,52 @@
       <div id="metric-slot"></div>
       <div id="nsm-slot"></div>
     </div>
+
+    <article class="trek-essay">
+      <p>You might have observed that every metric you chose as your winner was
+      solving something useful. But yet it seemed more short-term than anything
+      else.</p>
+
+      <p>Because this trail is remotely located, getting new people to visit
+      just once isn't enough to keep the small businesses alive. So, while
+      summit successes are crucial, trekker retention among locals is the more
+      important goal.</p>
+
+      <p>But how do you measure a delayed metric such as retention in a short
+      evaluation? You cannot run the experiment forever due to high execution
+      costs. And without evaluation of short-term metrics, taking a bet on
+      long-term metrics is also risky.</p>
+
+      <p class="lede">The solution is <strong>surrogate metrics</strong>:
+      statistical stand-ins that bridge short-term user behaviour to long-term
+      impact.</p>
+
+      <p>Often, in online product experimentation, isolated short-term metrics
+      rarely capture the effect of the long-term metric, which is what the
+      business focuses on.</p>
+
+      <h3>What it is, in short</h3>
+
+      <p>For instance, imagine you are at YouTube testing a new feature designed
+      to increase consumer retention — your long-term metric Y. For this case,
+      let's assume it's a two-week experiment that you execute.</p>
+
+      <p>In this approach, you collect short-term signals over the course of two
+      weeks: watch hours, active days, subscriptions.</p>
+
+      <p>Now look at your archive of old experiments, far enough back to have
+      the actual retention data. You have both: the two-week signals back then,
+      and what actually happened later. Learn the pattern between them once, and
+      you've built a translator — early signals in, long-term retention out.</p>
+
+      <p>Run your new test for two weeks and it tells you the likely retention
+      impact. You get a decision now instead of three, six or twelve months from
+      now.</p>
+
+      <p class="fork">For people not interested in the maths, this is where we
+      take different paths. The rest of the article is for data scientists.</p>
+    </article>
+
   </div>
   <script type="module">
 import { Application } from 'https://unpkg.com/@splinetool/runtime@1.9.28/build/runtime.js';
@@ -323,6 +386,22 @@ const METRICS = {
   },
 };
 
+/**
+ * The state before the reader picks anything. Not in METRICS, so it gets no
+ * button: trekkers simply climb to the flag and disappear. It gives the scene
+ * something to do while the reader reads, without implying a metric is already
+ * selected.
+ */
+const DEFAULT_SCENARIO = {
+  label: null,
+  definition: '',
+  blurb: 'Pick a primary metric above and watch how the trek changes.',
+  speedMul: 1,
+  startCount: 8,
+  plan: (n) => Array.from({ length: n }, () => ({
+    stopAt: M.flag, engageCafe: false, engageSummit: false })),
+};
+
 function makeRng(seed) {
   let a = seed >>> 0;
   return function () {
@@ -337,7 +416,7 @@ function createSim(opts = {}) {
   const cfg = {
     seed: 42,
     maxTrekkers: 8,
-    metric: 'base_starts',
+    metric: 'none',
     climbSeconds: 13,
     stopPause: 1.4,
     restPause: 1.1,          // how long a mid-climb rest lasts
@@ -362,7 +441,7 @@ function createSim(opts = {}) {
     sessions: 0,            // one per start, plus one per resumption
   };
 
-  function rules() { return METRICS[cfg.metric] || METRICS.base_starts; }
+  function rules() { return METRICS[cfg.metric] || DEFAULT_SCENARIO; }
 
   function activeCount() {
     return Math.min(rules().startCount, cfg.maxTrekkers);
@@ -439,7 +518,9 @@ function createSim(opts = {}) {
       case 'engaged_users':     return { value: s.engaged, unit: 'users' };
       case 'distance_per_user': return { value: s.started ? s.distance / s.started : 0,
                                          unit: 'km/user', decimals: 2 };
-      default:                  return { value: 0, unit: '' };
+      // no metric chosen yet: the card shows a placeholder rather than a zero,
+      // which would read as a real measurement
+      default:                  return { value: null, unit: '' };
     }
   }
 
@@ -785,7 +866,9 @@ function createControls(sim, slots) {
 
   function render() {
     const mv = sim.metricValue();
-    cardValue.textContent = `${fmt(mv.value, mv.decimals ?? 0)} ${mv.unit}`;
+    cardValue.textContent = mv.value === null
+      ? '—'
+      : `${fmt(mv.value, mv.decimals ?? 0)} ${mv.unit}`;
 
     const pct = sim.nsm() * 100;
     nsmValue.textContent = `${pct.toFixed(0)}%`;
@@ -800,7 +883,13 @@ function createControls(sim, slots) {
       `<span><b>${fmt(t.revenue)}</b> coins earned</span>`;
   }
 
-  selectMetric(sim.config.metric);
+  // Open with nothing selected: no button lit, the card showing a dash, and a
+  // prompt where the explanation will go.
+  cardName.textContent = 'None chosen yet';
+  cardDef.textContent = '';
+  blurb.textContent = DEFAULT_SCENARIO.blurb;
+  render();
+
   return { render };
 }
 
@@ -1130,7 +1219,7 @@ async function init() {
   const sim = createSim({
     maxTrekkers: trekkers.length,
     climbSeconds: CONFIG.climbSeconds,
-    metric: 'base_starts',
+    metric: 'none',   // nothing selected until the reader picks
   });
 
   // Controls talk only to the sim. They never touch the scene, which is what

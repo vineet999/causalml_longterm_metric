@@ -326,7 +326,7 @@ async function init() {
   const sim = createSim({
     maxTrekkers: trekkers.length,
     climbSeconds: CONFIG.climbSeconds,
-    metric: 'base_starts',
+    metric: 'none',   // nothing selected until the reader picks
   });
 
   // Controls talk only to the sim. They never touch the scene, which is what

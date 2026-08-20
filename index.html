@@ -66,7 +66,13 @@
   .trek-stage { touch-action: pan-y; }
   /* A quiet placeholder beats an empty cream rectangle: it tells the reader
      something is coming, which is most of what perceived speed is. */
-  #loader { position: absolute; inset: 0; display: flex; flex-direction: column;
+  /* The poster sits above the canvas until the real scene is ready. */
+  .stage-poster { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; object-position: center;
+    transition: opacity .45s ease; z-index: 1; }
+  .stage-poster.is-done { opacity: 0; pointer-events: none; }
+
+  #loader { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px;
     background: var(--bg); transition: opacity .45s ease; }
   #loader.is-done { opacity: 0; pointer-events: none; }
@@ -127,6 +133,21 @@
     border-radius: 6px; color: var(--ink); }
   .tc-buttons button:hover { border-color: var(--accent); }
 
+  /* ---------- essay ----------
+     Measure is capped near 68 characters: comfortable for continuous reading,
+     and narrower than the tool above it so the prose reads as commentary on
+     the simulation rather than as another panel of it. */
+  .trek-essay { max-width: 68ch; margin: 34px auto 8px; padding: 0 2px;
+    font-size: 16.5px; line-height: 1.72; color: #4A4038; }
+  .trek-essay p { margin: 0 0 17px; }
+  .trek-essay strong { color: var(--ink); font-weight: 600; }
+  .trek-essay h3 { font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin: 30px 0 13px; }
+  .trek-essay .lede { font-size: 18.5px; line-height: 1.6; color: var(--ink);
+    border-left: 3px solid var(--accent); padding-left: 16px; margin: 24px 0; }
+  .trek-essay .fork { margin-top: 28px; padding-top: 18px;
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 15.5px; }
+
   /* ---------- mobile ---------- */
   @media (max-width: 860px) {
     .trek-app { padding: 12px; }
@@ -136,6 +157,8 @@
     .tc-card-def { display: none; }   /* the number and its name carry it */
     .tc-stats { gap: 14px 18px; justify-content: center; }
     .tc-metric { font-size: 12.5px; padding: 8px 8px; }
+    .trek-essay { font-size: 16px; line-height: 1.7; margin-top: 26px; }
+    .trek-essay .lede { font-size: 17px; padding-left: 13px; }
   }
   @media (max-width: 620px) {
     /* Four across on a phone leaves ~80px per button, so labels like
@@ -171,6 +194,52 @@
       <div id="metric-slot"></div>
       <div id="nsm-slot"></div>
     </div>
+
+    <article class="trek-essay">
+      <p>You might have observed that every metric you chose as your winner was
+      solving something useful. But yet it seemed more short-term than anything
+      else.</p>
+
+      <p>Because this trail is remotely located, getting new people to visit
+      just once isn't enough to keep the small businesses alive. So, while
+      summit successes are crucial, trekker retention among locals is the more
+      important goal.</p>
+
+      <p>But how do you measure a delayed metric such as retention in a short
+      evaluation? You cannot run the experiment forever due to high execution
+      costs. And without evaluation of short-term metrics, taking a bet on
+      long-term metrics is also risky.</p>
+
+      <p class="lede">The solution is <strong>surrogate metrics</strong>:
+      statistical stand-ins that bridge short-term user behaviour to long-term
+      impact.</p>
+
+      <p>Often, in online product experimentation, isolated short-term metrics
+      rarely capture the effect of the long-term metric, which is what the
+      business focuses on.</p>
+
+      <h3>What it is, in short</h3>
+
+      <p>For instance, imagine you are at YouTube testing a new feature designed
+      to increase consumer retention — your long-term metric Y. For this case,
+      let's assume it's a two-week experiment that you execute.</p>
+
+      <p>In this approach, you collect short-term signals over the course of two
+      weeks: watch hours, active days, subscriptions.</p>
+
+      <p>Now look at your archive of old experiments, far enough back to have
+      the actual retention data. You have both: the two-week signals back then,
+      and what actually happened later. Learn the pattern between them once, and
+      you've built a translator — early signals in, long-term retention out.</p>
+
+      <p>Run your new test for two weeks and it tells you the likely retention
+      impact. You get a decision now instead of three, six or twelve months from
+      now.</p>
+
+      <p class="fork">For people not interested in the maths, this is where we
+      take different paths. The rest of the article is for data scientists.</p>
+    </article>
+
   </div>
   <script type="module" src="./main.js"></script>
 </body>

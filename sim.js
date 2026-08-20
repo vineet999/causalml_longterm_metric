@@ -139,6 +139,22 @@ export const METRICS = {
   },
 };
 
+/**
+ * The state before the reader picks anything. Not in METRICS, so it gets no
+ * button: trekkers simply climb to the flag and disappear. It gives the scene
+ * something to do while the reader reads, without implying a metric is already
+ * selected.
+ */
+export const DEFAULT_SCENARIO = {
+  label: null,
+  definition: '',
+  blurb: 'Pick a primary metric above and watch how the trek changes.',
+  speedMul: 1,
+  startCount: 8,
+  plan: (n) => Array.from({ length: n }, () => ({
+    stopAt: M.flag, engageCafe: false, engageSummit: false })),
+};
+
 export function makeRng(seed) {
   let a = seed >>> 0;
   return function () {
@@ -153,7 +169,7 @@ export function createSim(opts = {}) {
   const cfg = {
     seed: 42,
     maxTrekkers: 8,
-    metric: 'base_starts',
+    metric: 'none',
     climbSeconds: 13,
     stopPause: 1.4,
     restPause: 1.1,          // how long a mid-climb rest lasts
@@ -178,7 +194,7 @@ export function createSim(opts = {}) {
     sessions: 0,            // one per start, plus one per resumption
   };
 
-  function rules() { return METRICS[cfg.metric] || METRICS.base_starts; }
+  function rules() { return METRICS[cfg.metric] || DEFAULT_SCENARIO; }
 
   function activeCount() {
     return Math.min(rules().startCount, cfg.maxTrekkers);
@@ -255,7 +271,9 @@ export function createSim(opts = {}) {
       case 'engaged_users':     return { value: s.engaged, unit: 'users' };
       case 'distance_per_user': return { value: s.started ? s.distance / s.started : 0,
                                          unit: 'km/user', decimals: 2 };
-      default:                  return { value: 0, unit: '' };
+      // no metric chosen yet: the card shows a placeholder rather than a zero,
+      // which would read as a real measurement
+      default:                  return { value: null, unit: '' };
     }
   }
 
