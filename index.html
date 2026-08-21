@@ -15,14 +15,17 @@
       crossorigin>
 <style>
   :root {
-    --bg: #F0ECE3;
+    --bg: #FFFFFF;
     --panel: #FFFFFF;
-    --panel-alt: #FAF7F1;
-    --ink: #3E352C;
-    --muted: #8A7B6C;
-    --line: #DCD3C6;
+    --panel-alt: #F7F7F7;
+    --ink: #000000;
+    /* Muted and line are darker than the cream theme used: on white, the old
+       warm greys were too faint to read as secondary text rather than as
+       disabled text. */
+    --muted: #5C5C5C;
+    --line: #E0E0E0;
     --accent: #7A6448;
-    --good: #2F6B4F;
+    --good: #1F6B45;
     --poor: #B4483C;
   }
   * { box-sizing: border-box; }
@@ -88,7 +91,10 @@
   /* ---------- readout cards ---------- */
   .tc-card { border: 1px solid var(--line); border-radius: 10px;
     padding: 15px 16px; background: var(--panel); }
-  .tc-card--nsm { background: var(--panel-alt); border-color: #CFC3B0; }
+  /* On white, panel and page are the same colour, so the cards would vanish
+     without their own separation. */
+  .tc-card--metric { background: #FBFBFB; }
+  .tc-card--nsm { background: var(--panel-alt); border-color: #D6D6D6; }
   .tc-card-label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase;
     color: var(--muted); }
   .tc-card-name { font-size: 13px; margin-top: 3px; line-height: 1.35; }
@@ -138,8 +144,11 @@
      and narrower than the tool above it so the prose reads as commentary on
      the simulation rather than as another panel of it. */
   .trek-essay { max-width: 68ch; margin: 34px auto 8px; padding: 0 2px;
-    font-size: 16.5px; line-height: 1.72; color: #4A4038; }
+    font-size: 16.5px; line-height: 1.72; color: #000000; }
   .trek-essay p { margin: 0 0 17px; }
+  .trek-essay ol { margin: 0 0 17px; padding-left: 1.4em; }
+  .trek-essay ol li { margin-bottom: 9px; padding-left: 3px; }
+  .trek-essay ol li:last-child { margin-bottom: 0; }
   .trek-essay strong { color: var(--ink); font-weight: 600; }
   .trek-essay h3 { font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--muted); font-weight: 600; margin: 30px 0 13px; }
@@ -200,40 +209,52 @@
       solving something useful. But yet it seemed more short-term than anything
       else.</p>
 
-      <p>Because this trail is remotely located, getting new people to visit
-      just once isn't enough to keep the small businesses alive. So, while
-      summit successes are crucial, trekker retention among locals is the more
-      important goal.</p>
+      <ol>
+        <li>Because this trail is remotely located, improving acquisition is
+        intricate and may not be enough to keep the small businesses alive.</li>
+        <li>Summit Monetization Rate = % Summiters who purchase at cafe or
+        souvenir; measures immediate value capture, it relies on steady foot
+        traffic to scale.</li>
+      </ol>
+
+      <p>So, in a remote destination like Pahadi, where new footfalls are
+      expensive and low-volume, retention drives sustainable visitor growth.</p>
 
       <p>But how do you measure a delayed metric such as retention in a short
-      evaluation? You cannot run the experiment forever due to high execution
-      costs. And without evaluation of short-term metrics, taking a bet on
-      long-term metrics is also risky.</p>
+      experiment? You cannot run the experiment forever due to high execution
+      costs. And short signals in isolation may or may not directionally align
+      with your long-term metric.</p>
 
       <p class="lede">The solution is <strong>surrogate metrics</strong>:
       statistical stand-ins that bridge short-term user behaviour to long-term
       impact.</p>
 
       <p>Often, in online product experimentation, isolated short-term metrics
-      rarely capture the effect of the long-term metric, which is what the
-      business focuses on.</p>
+      rarely capture the effect of the long-term metric.</p>
 
-      <h3>What it is, in short</h3>
+      <h3>How it works, in short:</h3>
 
-      <p>For instance, imagine you are at YouTube testing a new feature designed
-      to increase consumer retention — your long-term metric Y. For this case,
-      let's assume it's a two-week experiment that you execute.</p>
+      <p>Imagine you are working at YouTube testing a new feature designed to
+      increase consumer retention. For this case, let's assume it's a two-week
+      experiment.</p>
 
-      <p>In this approach, you collect short-term signals over the course of two
-      weeks: watch hours, active days, subscriptions.</p>
+      <p>You measure the short-term signals over the course of two weeks: watch
+      hours, active days, subscriptions.</p>
 
-      <p>Now look at your archive of old experiments, far enough back to have
-      the actual retention data. You have both: the two-week signals back then,
-      and what actually happened later. Learn the pattern between them once, and
-      you've built a translator — early signals in, long-term retention out.</p>
+      <p>But you still want to know how these signals help in evaluating the
+      long-term goal.</p>
+
+      <p>So you look at your archive of old experiments, far enough back to have
+      the actual retention data. An experiment evaluating 12-month retention
+      must have spent at least a year to qualify here. Now, you have both: the
+      two-week signals back then, and what actually happened later. Learn the
+      pattern between them once, and you have built a translator — early signals
+      in, long-term retention out.</p>
 
       <p>Run your new test for two weeks and it tells you the likely retention
-      impact. You get a decision now instead of three, six or twelve months from
+      impact.</p>
+
+      <p>You get a decision now instead of three, six or twelve months from
       now.</p>
 
       <p class="fork">For people not interested in the maths, this is where we
