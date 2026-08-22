@@ -395,6 +395,39 @@
   .trek-reading span { display: block; font-size: 13.5px; color: var(--muted);
     font-style: italic; margin-top: 2px; }
 
+  /* ---------- boxed claim + reaction ---------- */
+  .trek-pill { display: inline-block; padding: 1px 9px 2px;
+    background: rgba(122,100,72,.10); border: 1px solid rgba(122,100,72,.35);
+    border-radius: 6px; color: var(--accent); font-weight: 600;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  /* The thumbs straddle the top edge of the box rather than taking a line of
+     their own. inline-block on the wrapper means the phrase never breaks
+     across two lines, which would leave the badge anchored to a fragment. */
+  .trek-claim { position: relative; display: inline-block; }
+  .has-claim { margin-top: 22px; }        /* room for the raised badge */
+  .trek-react { position: absolute; top: 0; right: 2px;
+    transform: translateY(-56%);
+    display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .trek-vote { display: inline-flex; align-items: center; gap: 4px;
+    font: inherit; line-height: 1; padding: 3px 7px;
+    cursor: pointer; background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    transition: border-color .15s, background .15s, transform .1s; }
+  .trek-vote .e { font-size: 12.5px; }
+  /* The count is hidden rather than absent, and its width reserved, so the
+     first vote cannot shift the badge sideways or change the page height. */
+  .trek-vote b { min-width: 6px; font-size: 10.5px; font-weight: 600;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+    visibility: hidden; }
+  .trek-react.has-voted .trek-vote b { visibility: visible; }
+  .trek-vote:hover { border-color: var(--accent); }
+  .trek-vote:active { transform: scale(.92); }
+  .trek-vote[aria-pressed="true"] { border-color: var(--accent);
+    background: rgba(122,100,72,.09); }
+  .trek-vote[aria-pressed="true"] b { color: var(--accent); }
+  .trek-vote:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 </style>
 </head>
 <body>
@@ -446,8 +479,15 @@
             steady foot traffic.</li>
           </ol>
 
-          <p>So, for Pahadi, driving trekker retention is what creates a
-          sustainable visitor and business growth at the same time.</p>
+          <p class="has-claim">So, for Pahadi, <span class="trek-claim"><span
+          class="trek-pill">driving trekker retention</span><span
+          class="trek-react" data-topic="retention"><button type="button"
+          class="trek-vote" data-vote="up" aria-pressed="false"
+          aria-label="Agree"><span class="e">&#128077;</span><b>0</b></button><button
+          type="button" class="trek-vote" data-vote="down" aria-pressed="false"
+          aria-label="Disagree"><span class="e">&#128078;</span><b>0</b></button></span></span>
+          is what creates a sustainable visitor and business growth at the same
+          time.</p>
 
           <p>With that established, we now move to the next question- How do you
           evaluate retention (a delayed metric) through a short experiment? You
@@ -799,6 +839,81 @@
 
   </div>
   <script type="module" src="./main.js"></script>
+  <script>
+  /* ---------- reactions ----------
+     There is no server behind this page, so a vote is stored in the reader's
+     own browser and the tallies below the thumbs are that reader's, not a
+     crowd's. Point VOTE_ENDPOINT at an API that accepts {topic, vote} and
+     returns {up, down} to make them real; everything else stays as it is. */
+  (function () {
+    var VOTE_ENDPOINT = null;
+
+    // Private-mode and partitioned third-party frames can throw on access, so
+    // storage is treated as a nicety and the widget still works without it.
+    var store = (function () {
+      try {
+        var k = '__t'; localStorage.setItem(k, k); localStorage.removeItem(k);
+        return localStorage;
+      } catch (e) {
+        var mem = {};
+        return { getItem: function (k) { return k in mem ? mem[k] : null; },
+                 setItem: function (k, v) { mem[k] = String(v); },
+                 removeItem: function (k) { delete mem[k]; } };
+      }
+    })();
+
+    document.querySelectorAll('.trek-react').forEach(function (box) {
+      var key    = 'trek.vote.' + (box.dataset.topic || 'default');
+      var counts = { up: 0, down: 0 };
+      var mine   = null;
+
+      try {
+        var saved = JSON.parse(store.getItem(key) || 'null');
+        if (saved) { counts = saved.counts || counts; mine = saved.mine || null; }
+      } catch (e) { /* corrupt value, start fresh */ }
+
+      function paint() {
+        box.classList.toggle('has-voted', !!mine);
+        box.querySelectorAll('.trek-vote').forEach(function (b) {
+          var v = b.dataset.vote;
+          b.querySelector('b').textContent = counts[v];
+          b.setAttribute('aria-pressed', mine === v ? 'true' : 'false');
+        });
+      }
+
+      box.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('.trek-vote');
+        if (!btn) return;
+        var v = btn.dataset.vote;
+
+        if (mine === v) { counts[v]--; mine = null; }      // click again to undo
+        else {
+          if (mine) counts[mine]--;                        // switching sides
+          counts[v]++; mine = v;
+        }
+
+        paint();
+        try { store.setItem(key, JSON.stringify({ counts: counts, mine: mine })); }
+        catch (e) { /* nothing to do; the vote still shows this session */ }
+
+        if (VOTE_ENDPOINT) {
+          fetch(VOTE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic: box.dataset.topic, vote: mine })
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d && typeof d.up === 'number') { counts = d; paint(); }
+          })
+          .catch(function () { /* keep the local tally */ });
+        }
+      });
+
+      paint();
+    });
+  })();
+  </script>
   <script>
   /* ---------- iframe height reporting ----------
      The embed is sized to the FULL page - every section expanded - so opening
