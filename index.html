@@ -251,13 +251,14 @@
     font-family: Georgia, "Times New Roman", serif; font-size: 1.05em; }
   .trek-table { width: 100%; border-collapse: collapse; margin: 6px 0 17px;
     border: 1px solid var(--line); font-size: 14.5px; line-height: 1.55; }
-  .trek-table th { width: 31%; text-align: left; vertical-align: top;
+  .trek-table tbody th { width: 31%; text-align: left; vertical-align: top;
     font-weight: 600; color: var(--ink); background: #FBFBFB;
     padding: 13px 14px; border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line); }
-  .trek-table td { vertical-align: top; color: var(--muted);
+  .trek-table tbody td { vertical-align: top; color: var(--muted);
     padding: 13px 14px; border-bottom: 1px solid var(--line); }
-  .trek-table tr:last-child th, .trek-table tr:last-child td { border-bottom: none; }
+  .trek-table tbody tr:last-child th,
+  .trek-table tbody tr:last-child td { border-bottom: none; }
 
   /* ---------- causal forest explainer ----------
      Every rule below is scoped to .cf-explainer. The original file set its
@@ -336,7 +337,7 @@
   @media(max-width:600px){ .cf-explainer .split{grid-template-columns:1fr} }
   /* Overrides: the widget was a standalone page, so it centred and padded
      itself. Inside the essay the section handles both. */
-  .cf-explainer { margin: 26px 0 0; }
+  .cf-explainer { margin: 0; }
   .cf-explainer .wrap { max-width: none; margin: 0; padding: 0; }
   .cf-explainer .block:first-child { padding-top: 0; }
   /* The 8-column table cannot shrink below its content, so give it a scroll
@@ -347,15 +348,56 @@
      table and two side-by-side panels, so it breaks out to its native width
      once the viewport can afford it. Centred on the parent, which is itself
      centred, so it stays centred on the page. */
-  @media (min-width: 840px) {
-    .cf-explainer { width: 760px; margin-left: 50%; transform: translateX(-50%); }
-  }
   @media (max-width: 620px) {
     .trek-eq { font-size: 16px; padding: 12px 10px; }
     .trek-table { font-size: 13.5px; }
     .trek-table th, .trek-table td { padding: 10px 11px; }
-    .trek-table th { width: 36%; }
+    .trek-table tbody th { width: 36%; }
   }
+
+  /* ---------- technical appendix: wide zone + sub-sections ----------
+     The worked example and the three reference sections are tables and panels,
+     not prose, so they break out of the 68ch measure together rather than each
+     choosing its own width. Centred on the parent, which is itself centred. */
+  .trek-wide { margin-top: 26px; }
+  @media (min-width: 840px) {
+    .trek-wide { width: 760px; margin-left: 50%; transform: translateX(-50%); }
+  }
+  /* Nested one level down, so the summary is a step quieter than the top-level
+     sections - otherwise the hierarchy reads flat. */
+  .trek-section--sub > summary { font-size: 16px; padding: 14px 2px; }
+  .trek-section--sub { border-top-color: var(--line); }
+  .trek-section--sub .trek-section-body { padding-bottom: 18px; }
+  .trek-section--sub .trek-section-body h3:first-child { margin-top: 2px; }
+
+  /* header-row tables */
+  .trek-table thead th { background: #F3F3F3; width: auto;
+    font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; padding: 10px 14px;
+    border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .trek-table thead th:last-child { border-right: none; }
+  .trek-table--grid tbody th { width: 25%; }
+  .trek-table--grid tbody td:last-child { width: 26%; }
+  .trek-table--rules tbody th { width: 22%; }
+  .trek-table .tgt { color: var(--ink); font-weight: 600; }
+  /* Bullets inside a cell are a list of conditions, so they take real bullets
+     rather than the em-dash used for the step lists in the prose. */
+  .trek-table ul { margin: 0; padding-left: 1.05em; list-style: disc; }
+  .trek-table ul li { padding-left: 0; margin-bottom: 5px; }
+  .trek-table ul li::before { content: none; }
+  .trek-table ul li:last-child { margin-bottom: 0; }
+  .trek-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  @media (max-width: 560px) { .trek-scroll .trek-table { min-width: 470px; } }
+
+  /* reading list */
+  .trek-reading li { margin-bottom: 13px; }
+  .trek-reading li::before { content: none; }
+  .trek-reading { padding-left: 0; }
+  .trek-reading a { color: var(--accent); text-decoration: none;
+    border-bottom: 1px solid rgba(122,100,72,.35); font-weight: 500; }
+  .trek-reading a:hover { border-bottom-color: var(--accent); }
+  .trek-reading span { display: block; font-size: 13.5px; color: var(--muted);
+    font-style: italic; margin-top: 2px; }
 
 </style>
 </head>
@@ -531,6 +573,7 @@
             </tbody>
           </table>
 
+          <div class="trek-wide">
           <section class="cf-explainer" aria-label="Causal forest worked example">
           <!-- WHAT WE START WITH -->
             <div class="block">
@@ -606,7 +649,153 @@
                 </div>
               </div>
             </div>
+
           </section>
+
+          <details class="trek-section trek-section--sub">
+            <summary>Validate across historical experiments</summary>
+            <div class="trek-section-body">
+              <p>To establish empirical trust in the model, backtest it on a
+              portfolio of <strong>completed historical A/B tests</strong> where
+              true 365-day outcomes (<var>Y</var><sub>actual</sub>) have already
+              been observed.</p>
+
+              <ul>
+                <li>Extract the first 14 days of behavioral data for each of the
+                past experiments.</li>
+                <li>Run <var>S</var><sub>14d</sub> through the trained Causal
+                Forest to generate predicted long-term treatment effect
+                (&Delta;<var>&#374;</var>).</li>
+                <li>Compute the actual observed 365-day treatment effect
+                (&Delta;<var>Y</var><sub>actual</sub>) for each experiment.</li>
+                <li>Plot predicted lift (&Delta;<var>&#374;</var>) against
+                actual 365-day lift (&Delta;<var>Y</var><sub>actual</sub>)
+                across all tests.</li>
+              </ul>
+
+              <h3>Validation metrics &amp; benchmark targets</h3>
+
+              <div class="trek-scroll">
+                <table class="trek-table trek-table--grid">
+                  <thead>
+                    <tr>
+                      <th scope="col">Validation metric</th>
+                      <th scope="col">Methodology / formula</th>
+                      <th scope="col">Production target</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Treatment effect correlation
+                        (R<sup>2</sup><sub>treatment</sub>)</th>
+                      <td>Measure correlation between predicted lift and actual
+                      365-day lift across experiment points.</td>
+                      <td class="tgt">R<sup>2</sup> &gt; 0.80</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Directional alignment rate</th>
+                      <td>Percentage of experiments where Sign(predicted lift)
+                      == Sign(actual 365-day lift).</td>
+                      <td class="tgt">&gt; 90% alignment</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">A/A test calibration</th>
+                      <td>Evaluate model on historical A/A tests or
+                      non-impactful UI tweaks.</td>
+                      <td class="tgt">Predicted lift &asymp; 0 (statistically
+                      indistinguishable)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <details class="trek-section trek-section--sub">
+            <summary>Post-experiment decision &amp; conclusion framework</summary>
+            <div class="trek-section-body">
+              <p>At Day 14 of your live experiment, aggregate individual Causal
+              Forest predictions across all treatment and control users to
+              compute the overall <strong>Average Treatment Effect
+              (ATE)</strong>:</p>
+
+              <p class="trek-eq"><var>&tau;&#770;</var><sub>ATE</sub> =
+              (1 / <var>N</var>) &sdot; &Sigma;
+              <var>&tau;&#770;<sub>i</sub></var>(<var>S<sub>i</sub></var>,
+              <var>X<sub>i</sub></var>)</p>
+
+              <h3>Rollout decision rules</h3>
+
+              <div class="trek-scroll">
+                <table class="trek-table trek-table--rules">
+                  <thead>
+                    <tr>
+                      <th scope="col">Decision outcome</th>
+                      <th scope="col">Condition criteria &amp; thresholds</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">Ship feature</th>
+                      <td>
+                        <ul>
+                          <li><var>&tau;&#770;</var><sub>ATE</sub> is
+                          statistically significant (p &lt; 0.05)</li>
+                          <li>95% confidence interval is strictly &gt; 0</li>
+                          <li>Predicted lift exceeds Minimum Detectable Effect
+                          (MDE) to offset engineering costs</li>
+                          <li>Guardrail metrics (e.g. latency, unsubscribes)
+                          remain healthy</li>
+                        </ul>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Abandon feature</th>
+                      <td>
+                        <ul>
+                          <li><var>&tau;&#770;</var><sub>ATE</sub> &lt; 0 with
+                          high statistical confidence</li>
+                          <li>Feature damages predicted long-term retention,
+                          even if 14-day vanity metrics (e.g. raw clicks) appear
+                          positive</li>
+                        </ul>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Inconclusive</th>
+                      <td>
+                        <ul>
+                          <li>95% confidence interval overlaps zero</li>
+                          <li>Action: extend test window for higher power, or
+                          iterate on feature design before re-testing</li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <details class="trek-section trek-section--sub">
+            <summary>Key resources &amp; recommended reading</summary>
+            <div class="trek-section-body">
+              <ul class="trek-reading">
+                <li><a href="https://www.nber.org/papers/w26463"
+                  target="_blank" rel="noopener">The Surrogate Index: Combining
+                  Short-Term Proxies to Estimate Long-Term Treatment Effects
+                  More Rapidly and Precisely</a>
+                  <span>Athey, Chetty, Imbens &amp; Kang, 2019</span></li>
+                <li><a href="https://research.google/pubs/focus-on-the-long-term-its-better-for-users-and-business/"
+                  target="_blank" rel="noopener">Focusing on the Long-term:
+                  It's Good for Users and Business</a>
+                  <span>Hohnhold, O'Brien &amp; Tang, Google, KDD 2015</span></li>
+                <li>How Uber Predicts Long-Term User Value in Experiments
+                  <span>Uber Engineering Blog</span></li>
+              </ul>
+            </div>
+          </details>
+          </div>
         </div>
       </details>
     </article>
