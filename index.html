@@ -157,6 +157,42 @@
   .trek-essay .fork { margin-top: 28px; padding-top: 18px;
     border-top: 1px solid var(--line); color: var(--muted); font-size: 15.5px; }
 
+  /* ---------- collapsible sections ----------
+     <details> is used rather than a JS accordion: it opens without scripting,
+     is keyboard operable and announces its state to screen readers for free.
+     Sections are independent, so a reader can hold two open at once. */
+  .trek-section { border-top: 1px solid var(--line); }
+  .trek-section:last-of-type { border-bottom: 1px solid var(--line); }
+  .trek-section > summary {
+    cursor: pointer; list-style: none; user-select: none;
+    display: flex; align-items: center; gap: 12px;
+    padding: 17px 2px; margin: 0;
+    font-size: 17.5px; font-weight: 600; line-height: 1.35; color: var(--ink);
+  }
+  /* Safari draws its own disclosure triangle unless this is suppressed. */
+  .trek-section > summary::-webkit-details-marker { display: none; }
+  .trek-section > summary:hover { color: var(--accent); }
+  .trek-section > summary:focus-visible { outline: 2px solid var(--accent);
+    outline-offset: 3px; border-radius: 4px; }
+  /* Chevron drawn from two borders: no icon font, no extra request. */
+  .trek-section > summary::after {
+    content: ""; margin-left: auto; flex: none;
+    width: 8px; height: 8px;
+    border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform .2s ease;
+  }
+  .trek-section[open] > summary::after { transform: rotate(-135deg); }
+  .trek-section-body { padding: 2px 2px 22px; animation: sectionIn .25s ease both; }
+  @keyframes sectionIn { from { opacity: 0; transform: translateY(-4px); }
+                         to   { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .trek-section-body { animation: none; }
+    .trek-section > summary::after { transition: none; }
+  }
+  .trek-section-body > :last-child { margin-bottom: 0; }
+  .trek-section-body .lede { margin-bottom: 0; }
+
   /* ---------- mobile ---------- */
   @media (max-width: 860px) {
     .trek-app { padding: 12px; }
@@ -205,77 +241,85 @@
     </div>
 
     <article class="trek-essay">
-      <p>You might have observed that every metric you chose as your winner was
-      solving something useful. But yet it seemed more short-term than anything
-      else. Why so? Let's take a step back-</p>
-     
-     <ol>
-        <li>Who are the people here? - Trekkers & businesses
-        (We exclude monastery since it is an independent cultural landmark and not 
-        a commercial entity) </li>
-        <li>Primary motivation? - Trekkers are seeking a rejuvenating 
-             experience- overcoming jitters to begin the climb, pushing through 
-             stretches to achieve summit euphoria, and anchoring the sacred memory 
-             at the monastery, cafe and souvenir shop. 
-         Local businesses are seeking to serve these customers through this journey
-             and earn a predictable, sustainable revenue.</li>
-      </ol>
-      <p>Whatever value we bring must cater to both users to sustain the 
-      ecosystem.</p>
+      <details class="trek-section" open>
+        <summary>Evaluating the expedition</summary>
+        <div class="trek-section-body">
+          <p>You might have observed that every metric you chose as your winner
+          was solving something useful. But yet it seemed more short-term than
+          anything else. Why so? Let's take a step back-</p>
 
-      <ol>
-        <li>Prima facie, since this trail is remote, improving acquisition is
-        intricate and may not be enough to keep the small businesses alive.</li>
-        <li>Conversely, Summiters Expense Rate (%Summiters
-             who purchase at cafe or souvenir shop) might feel more appropriate; 
-             It indeed measures immediate value capture, but it fundamentally 
-             relies on a steady foot traffic.</li>
-      </ol>
+          <ol>
+            <li>Who are the people here? - Trekkers &amp; businesses
+            (We exclude monastery since it is an independent cultural landmark
+            and not a commercial entity)</li>
+            <li>Primary motivation? - Trekkers are seeking a rejuvenating
+            experience- overcoming jitters to begin the climb, pushing through
+            stretches to achieve summit euphoria, and anchoring the sacred
+            memory at the monastery, cafe and souvenir shop.
+            Local businesses are seeking to serve these customers through this
+            journey and earn a predictable, sustainable revenue.</li>
+          </ol>
 
-      <p>So, for Pahadi, driving trekker retention will
-           create a sustainable visitor and business growth at the same time.</p>
+          <p>Whatever value we bring must cater to both users to sustain the
+          ecosystem.</p>
 
-      <p>It may have felt gratifying to Pahadi finally knowing what to evaluate. But 
-           the challenge is - How do you evaluate 
-      retention (a delayed metric) through a short experiment? You cannot run the 
-           experiment forever to observe actual retention happen due to high execution costs. 
-           And short-signals in isolation may or may not directionally align with your 
-           long-term metric. For instance, people's trek time would increase because 
-      people now walk slower, relax longer at the cafe but don't bother going further 
-           to the summit.</p>
+          <ol>
+            <li>Prima facie, since this trail is remote, improving acquisition
+            is intricate and may not be enough to keep the small businesses
+            alive.</li>
+            <li>Conversely, Summiters Expense Rate (%Summiters who purchase at
+            cafe or souvenir shop) might feel more appropriate; It indeed
+            measures immediate value capture, but it fundamentally relies on a
+            steady foot traffic.</li>
+          </ol>
 
-      <p class="lede">The solution is <strong>surrogate metrics</strong>:
-      measurable short-term behaviors that predict long-term success.</p>
+          <p>So, for Pahadi, driving trekker retention is what creates a
+          sustainable visitor and business growth at the same time.</p>
 
-      <p>Often, in online product experimentation, isolated short-term metrics
-      rarely capture the effect of the long-term metric. Leveraging surrogates 
-      bridges the gap between immediate experiment results and lasting retention.</p>
+          <p>With that established, we now move to the next question- How do you
+          evaluate retention (a delayed metric) through a short experiment? You
+          cannot run the experiment forever to observe actual retention due to
+          high execution costs. And short signals in isolation may or may not
+          directionally align with your long-term metric.</p>
 
-      <h3>How it works, in short:</h3>
+          <p class="lede">The solution is <strong>surrogate metrics</strong>:
+          measurable short-term behaviors that predict long-term success.</p>
+        </div>
+      </details>
 
-      <p>Imagine you are working at YouTube testing a new feature designed to
-      increase consumer retention. Consumer here is the user who streams and consumes
-           content. For this case, let's assume it's a two-week
-      experiment.</p>
+      <details class="trek-section">
+        <summary>How it works, in short</summary>
+        <div class="trek-section-body">
+          <p>Often, in online product experimentation, isolated short-term
+          metrics rarely capture the effect of the long-term metric. Leveraging
+          surrogates bridges the gap between immediate experiment results and
+          lasting retention.</p>
 
-      <p>You first measure the short-term signals over the course of two weeks: this can
-           be watch hours, active days, subscriptions etc.</p>
+          <p>Imagine you are working at YouTube testing a new feature designed
+          to increase consumer retention. Consumer here is the user who streams
+          and consumes content. For this case, let's assume it's a two-week
+          experiment.</p>
 
-      <p>But you still want to know how these signals help in evaluating the
-      long-term goal.</p>
+          <p>You first measure the short-term signals over the course of two
+          weeks: this can be watch hours, active days, subscriptions etc.</p>
 
-      <p>So you look at your archive of old experiments, far enough back to have
-      the actual retention data. An experiment evaluating 12-month retention
-      must have spent at least a year to qualify here. Now, you have both: the
-      two-week signals back then, and what actually happened later. Learn the
-      pattern between them once, and you have built a translator — early signals
-      in, long-term retention out.</p>
+          <p>But you still want to know how these signals help in evaluating the
+          long-term goal.</p>
 
-      <p>Run your new test for two weeks and it tells you the likely retention
-      impact.</p>
+          <p>So you look at your archive of old experiments, far enough back to
+          have the actual retention data. An experiment evaluating 12-month
+          retention must have spent at least a year to qualify here. Now, you
+          have both: the two-week signals back then, and what actually happened
+          later. Learn the pattern between them once, and you have built a
+          translator — early signals in, long-term retention out.</p>
 
-      <p>You get a decision now instead of three, six or twelve months from
-      now.</p>
+          <p>Run your new test for two weeks and it tells you the likely
+          retention impact.</p>
+
+          <p>You get a decision now instead of three, six or twelve months from
+          now.</p>
+        </div>
+      </details>
 
       <p class="fork">For people not interested in the maths, this is where we
       take different paths. The rest of the article is for data scientists.</p>
