@@ -355,21 +355,14 @@
     .trek-table tbody th { width: 36%; }
   }
 
-  /* ---------- technical appendix: wide zone + sub-sections ----------
-     The worked example and the three reference sections are tables and panels,
-     not prose, so they break out of the 68ch measure together rather than each
-     choosing its own width. Centred on the parent, which is itself centred. */
+  /* ---------- worked example: wide zone ----------
+     The causal-forest walkthrough is a table and two side-by-side panels, not
+     prose, so it breaks out of the 68ch measure. Centred on the parent, which
+     is itself centred. */
   .trek-wide { margin-top: 26px; }
   @media (min-width: 840px) {
     .trek-wide { width: 760px; margin-left: 50%; transform: translateX(-50%); }
   }
-  /* Nested one level down, so the summary is a step quieter than the top-level
-     sections - otherwise the hierarchy reads flat. */
-  .trek-section--sub > summary { font-size: 16px; padding: 14px 2px; }
-  .trek-section--sub { border-top-color: var(--line); }
-  .trek-section--sub .trek-section-body { padding-bottom: 18px; }
-  .trek-section--sub .trek-section-body h3:first-child { margin-top: 2px; }
-
   /* header-row tables */
   .trek-table thead th { background: #F3F3F3; width: auto;
     font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
@@ -386,8 +379,11 @@
   .trek-table ul li { padding-left: 0; margin-bottom: 5px; }
   .trek-table ul li::before { content: none; }
   .trek-table ul li:last-child { margin-bottom: 0; }
+  /* These tables no longer sit in the wide zone, so they can outgrow the prose
+     measure on a narrow viewport: a floor plus a scroll rail keeps the columns
+     legible instead of letting them squash. */
   .trek-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  @media (max-width: 560px) { .trek-scroll .trek-table { min-width: 470px; } }
+  .trek-scroll .trek-table { min-width: 500px; }
 
   /* reading list */
   .trek-reading li { margin-bottom: 13px; }
@@ -652,155 +648,207 @@
 
           </section>
 
-          <details class="trek-section trek-section--sub">
-            <summary>Validate across historical experiments</summary>
-            <div class="trek-section-body">
-              <p>To establish empirical trust in the model, backtest it on a
-              portfolio of <strong>completed historical A/B tests</strong> where
-              true 365-day outcomes (<var>Y</var><sub>actual</sub>) have already
-              been observed.</p>
-
-              <ul>
-                <li>Extract the first 14 days of behavioral data for each of the
-                past experiments.</li>
-                <li>Run <var>S</var><sub>14d</sub> through the trained Causal
-                Forest to generate predicted long-term treatment effect
-                (&Delta;<var>&#374;</var>).</li>
-                <li>Compute the actual observed 365-day treatment effect
-                (&Delta;<var>Y</var><sub>actual</sub>) for each experiment.</li>
-                <li>Plot predicted lift (&Delta;<var>&#374;</var>) against
-                actual 365-day lift (&Delta;<var>Y</var><sub>actual</sub>)
-                across all tests.</li>
-              </ul>
-
-              <h3>Validation metrics &amp; benchmark targets</h3>
-
-              <div class="trek-scroll">
-                <table class="trek-table trek-table--grid">
-                  <thead>
-                    <tr>
-                      <th scope="col">Validation metric</th>
-                      <th scope="col">Methodology / formula</th>
-                      <th scope="col">Production target</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <th scope="row">Treatment effect correlation
-                        (R<sup>2</sup><sub>treatment</sub>)</th>
-                      <td>Measure correlation between predicted lift and actual
-                      365-day lift across experiment points.</td>
-                      <td class="tgt">R<sup>2</sup> &gt; 0.80</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">Directional alignment rate</th>
-                      <td>Percentage of experiments where Sign(predicted lift)
-                      == Sign(actual 365-day lift).</td>
-                      <td class="tgt">&gt; 90% alignment</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">A/A test calibration</th>
-                      <td>Evaluate model on historical A/A tests or
-                      non-impactful UI tweaks.</td>
-                      <td class="tgt">Predicted lift &asymp; 0 (statistically
-                      indistinguishable)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </details>
-
-          <details class="trek-section trek-section--sub">
-            <summary>Post-experiment decision &amp; conclusion framework</summary>
-            <div class="trek-section-body">
-              <p>At Day 14 of your live experiment, aggregate individual Causal
-              Forest predictions across all treatment and control users to
-              compute the overall <strong>Average Treatment Effect
-              (ATE)</strong>:</p>
-
-              <p class="trek-eq"><var>&tau;&#770;</var><sub>ATE</sub> =
-              (1 / <var>N</var>) &sdot; &Sigma;
-              <var>&tau;&#770;<sub>i</sub></var>(<var>S<sub>i</sub></var>,
-              <var>X<sub>i</sub></var>)</p>
-
-              <h3>Rollout decision rules</h3>
-
-              <div class="trek-scroll">
-                <table class="trek-table trek-table--rules">
-                  <thead>
-                    <tr>
-                      <th scope="col">Decision outcome</th>
-                      <th scope="col">Condition criteria &amp; thresholds</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <th scope="row">Ship feature</th>
-                      <td>
-                        <ul>
-                          <li><var>&tau;&#770;</var><sub>ATE</sub> is
-                          statistically significant (p &lt; 0.05)</li>
-                          <li>95% confidence interval is strictly &gt; 0</li>
-                          <li>Predicted lift exceeds Minimum Detectable Effect
-                          (MDE) to offset engineering costs</li>
-                          <li>Guardrail metrics (e.g. latency, unsubscribes)
-                          remain healthy</li>
-                        </ul>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th scope="row">Abandon feature</th>
-                      <td>
-                        <ul>
-                          <li><var>&tau;&#770;</var><sub>ATE</sub> &lt; 0 with
-                          high statistical confidence</li>
-                          <li>Feature damages predicted long-term retention,
-                          even if 14-day vanity metrics (e.g. raw clicks) appear
-                          positive</li>
-                        </ul>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th scope="row">Inconclusive</th>
-                      <td>
-                        <ul>
-                          <li>95% confidence interval overlaps zero</li>
-                          <li>Action: extend test window for higher power, or
-                          iterate on feature design before re-testing</li>
-                        </ul>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </details>
-
-          <details class="trek-section trek-section--sub">
-            <summary>Key resources &amp; recommended reading</summary>
-            <div class="trek-section-body">
-              <ul class="trek-reading">
-                <li><a href="https://www.nber.org/papers/w26463"
-                  target="_blank" rel="noopener">The Surrogate Index: Combining
-                  Short-Term Proxies to Estimate Long-Term Treatment Effects
-                  More Rapidly and Precisely</a>
-                  <span>Athey, Chetty, Imbens &amp; Kang, 2019</span></li>
-                <li><a href="https://research.google/pubs/focus-on-the-long-term-its-better-for-users-and-business/"
-                  target="_blank" rel="noopener">Focusing on the Long-term:
-                  It's Good for Users and Business</a>
-                  <span>Hohnhold, O'Brien &amp; Tang, Google, KDD 2015</span></li>
-                <li>How Uber Predicts Long-Term User Value in Experiments
-                  <span>Uber Engineering Blog</span></li>
-              </ul>
-            </div>
-          </details>
           </div>
+        </div>
+      </details>
+
+      <details class="trek-section">
+        <summary>Validate across historical experiments</summary>
+        <div class="trek-section-body">
+          <p>To establish empirical trust in the model, backtest it on a
+          portfolio of <strong>completed historical A/B tests</strong> where
+          true 365-day outcomes (<var>Y</var><sub>actual</sub>) have already
+          been observed.</p>
+
+          <ul>
+            <li>Extract the first 14 days of behavioral data for each of the
+            past experiments.</li>
+            <li>Run <var>S</var><sub>14d</sub> through the trained Causal
+            Forest to generate predicted long-term treatment effect
+            (&Delta;<var>&#374;</var>).</li>
+            <li>Compute the actual observed 365-day treatment effect
+            (&Delta;<var>Y</var><sub>actual</sub>) for each experiment.</li>
+            <li>Plot predicted lift (&Delta;<var>&#374;</var>) against
+            actual 365-day lift (&Delta;<var>Y</var><sub>actual</sub>)
+            across all tests.</li>
+          </ul>
+
+          <h3>Validation metrics &amp; benchmark targets</h3>
+
+          <div class="trek-scroll">
+            <table class="trek-table trek-table--grid">
+              <thead>
+                <tr>
+                  <th scope="col">Validation metric</th>
+                  <th scope="col">Methodology / formula</th>
+                  <th scope="col">Production target</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Treatment effect correlation
+                    (R<sup>2</sup><sub>treatment</sub>)</th>
+                  <td>Measure correlation between predicted lift and actual
+                  365-day lift across experiment points.</td>
+                  <td class="tgt">R<sup>2</sup> &gt; 0.80</td>
+                </tr>
+                <tr>
+                  <th scope="row">Directional alignment rate</th>
+                  <td>Percentage of experiments where Sign(predicted lift)
+                  == Sign(actual 365-day lift).</td>
+                  <td class="tgt">&gt; 90% alignment</td>
+                </tr>
+                <tr>
+                  <th scope="row">A/A test calibration</th>
+                  <td>Evaluate model on historical A/A tests or
+                  non-impactful UI tweaks.</td>
+                  <td class="tgt">Predicted lift &asymp; 0 (statistically
+                  indistinguishable)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="trek-section">
+        <summary>Post-experiment decision &amp; conclusion framework</summary>
+        <div class="trek-section-body">
+          <p>At Day 14 of your live experiment, aggregate individual Causal
+          Forest predictions across all treatment and control users to
+          compute the overall <strong>Average Treatment Effect
+          (ATE)</strong>:</p>
+
+          <p class="trek-eq"><var>&tau;&#770;</var><sub>ATE</sub> =
+          (1 / <var>N</var>) &sdot; &Sigma;
+          <var>&tau;&#770;<sub>i</sub></var>(<var>S<sub>i</sub></var>,
+          <var>X<sub>i</sub></var>)</p>
+
+          <h3>Rollout decision rules</h3>
+
+          <div class="trek-scroll">
+            <table class="trek-table trek-table--rules">
+              <thead>
+                <tr>
+                  <th scope="col">Decision outcome</th>
+                  <th scope="col">Condition criteria &amp; thresholds</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Ship feature</th>
+                  <td>
+                    <ul>
+                      <li><var>&tau;&#770;</var><sub>ATE</sub> is
+                      statistically significant (p &lt; 0.05)</li>
+                      <li>95% confidence interval is strictly &gt; 0</li>
+                      <li>Predicted lift exceeds Minimum Detectable Effect
+                      (MDE) to offset engineering costs</li>
+                      <li>Guardrail metrics (e.g. latency, unsubscribes)
+                      remain healthy</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Abandon feature</th>
+                  <td>
+                    <ul>
+                      <li><var>&tau;&#770;</var><sub>ATE</sub> &lt; 0 with
+                      high statistical confidence</li>
+                      <li>Feature damages predicted long-term retention,
+                      even if 14-day vanity metrics (e.g. raw clicks) appear
+                      positive</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Inconclusive</th>
+                  <td>
+                    <ul>
+                      <li>95% confidence interval overlaps zero</li>
+                      <li>Action: extend test window for higher power, or
+                      iterate on feature design before re-testing</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="trek-section">
+        <summary>Key resources &amp; recommended reading</summary>
+        <div class="trek-section-body">
+          <ul class="trek-reading">
+            <li><a href="https://www.nber.org/papers/w26463"
+              target="_blank" rel="noopener">The Surrogate Index: Combining
+              Short-Term Proxies to Estimate Long-Term Treatment Effects
+              More Rapidly and Precisely</a>
+              <span>Athey, Chetty, Imbens &amp; Kang, 2019</span></li>
+            <li><a href="https://research.google/pubs/focus-on-the-long-term-its-better-for-users-and-business/"
+              target="_blank" rel="noopener">Focusing on the Long-term:
+              It's Good for Users and Business</a>
+              <span>Hohnhold, O'Brien &amp; Tang, Google, KDD 2015</span></li>
+            <li>How Uber Predicts Long-Term User Value in Experiments
+              <span>Uber Engineering Blog</span></li>
+          </ul>
         </div>
       </details>
     </article>
 
   </div>
   <script type="module" src="./main.js"></script>
+  <script>
+  /* ---------- iframe height reporting ----------
+     The embed is sized to the FULL page - every section expanded - so opening
+     a section can never clip the content. The number cannot be hardcoded
+     because it depends on viewport width (the stage is 16/9 and the prose
+     rewraps), so the page measures it and posts it to the parent.
+
+     The measurement opens every <details>, reads the height, and closes them
+     back. Because all three steps happen in one task the browser never paints
+     the intermediate state, so nothing flickers. */
+  (function () {
+    if (window.parent === window) return;          // not embedded, nothing to do
+
+    var last = 0, measuring = false;
+
+    function fullHeight() {
+      var ds = document.querySelectorAll('details'), was = [], i;
+      measuring = true;
+      for (i = 0; i < ds.length; i++) { was[i] = ds[i].open; ds[i].open = true; }
+      // Reading the rect forces layout with everything open.
+      var h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+      for (i = 0; i < ds.length; i++) { ds[i].open = was[i]; }
+      measuring = false;
+      return h;
+    }
+
+    function send() {
+      if (measuring) return;
+      var h = fullHeight();
+      if (!h || Math.abs(h - last) < 2) return;
+      last = h;
+      window.parent.postMessage({ type: 'trek:height', height: h }, '*');
+    }
+
+    /* Width changes are what actually move this number, so watch the element
+       that tracks width rather than the document height. */
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { if (!measuring) send(); })
+        .observe(document.body);
+    } else {
+      setInterval(send, 500);                      // older Safari
+    }
+
+    window.addEventListener('load', send);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(send);
+    /* The Spline scene can change the stage height when it swaps out the
+       poster, and it lands well after load. */
+    [100, 600, 1500, 3000].forEach(function (t) { setTimeout(send, t); });
+    send();
+  })();
+  </script>
 </body>
 </html>
