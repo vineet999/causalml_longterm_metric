@@ -400,7 +400,7 @@
     background: rgba(122,100,72,.10); border: 1px solid rgba(122,100,72,.35);
     border-radius: 6px; color: var(--accent); font-weight: 600;
     box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-  /* The thumbs straddle the top edge of the box rather than taking a line of
+  /* The vote badges straddle the top edge of the box rather than taking a line of
      their own. inline-block on the wrapper means the phrase never breaks
      across two lines, which would leave the badge anchored to a fragment. */
   .trek-claim { position: relative; display: inline-block; }
@@ -415,6 +415,11 @@
     box-shadow: 0 1px 2px rgba(0,0,0,.05);
     transition: border-color .15s, background .15s, transform .1s; }
   .trek-vote .e { font-size: 12.5px; }
+  /* The egg is drawn inline rather than set as the 🥚 emoji, which every
+     platform renders white or pale beige. An SVG lets it read as an actual
+     brown egg and sit in the page's own warm palette. */
+  .trek-vote .egg { display: inline-flex; align-items: center; }
+  .trek-vote .egg svg { display: block; }
   /* The count is hidden rather than absent, and its width reserved, so the
      first vote cannot shift the badge sideways or change the page height. */
   .trek-vote b { min-width: 6px; font-size: 10.5px; font-weight: 600;
@@ -483,9 +488,18 @@
           class="trek-pill">driving trekker retention</span><span
           class="trek-react" data-topic="retention"><button type="button"
           class="trek-vote" data-vote="up" aria-pressed="false"
-          aria-label="Agree"><span class="e">&#128077;</span><b>0</b></button><button
+          aria-label="Agree"><span class="e">&#128170;</span><b>0</b></button><button
           type="button" class="trek-vote" data-vote="down" aria-pressed="false"
-          aria-label="Disagree"><span class="e">&#128078;</span><b>0</b></button></span></span>
+          aria-label="Disagree"><span class="e egg"><svg viewBox="0 0 16 20"
+          width="12" height="15" aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="eggBrown"
+          x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B98455"/><stop
+          offset=".55" stop-color="#94643C"/><stop offset="1"
+          stop-color="#6B4526"/></linearGradient></defs><path d="M8 .9c3.5 0 6.6
+          6 6.6 11.1 0 4.5-2.9 7.1-6.6 7.1s-6.6-2.6-6.6-7.1C1.4 6.9 4.5.9 8
+          .9z" fill="url(#eggBrown)"/><ellipse cx="5.9" cy="7.4" rx="1.5"
+          ry="2.5" fill="#fff" opacity=".28" transform="rotate(-18 5.9
+          7.4)"/></svg></span><b>0</b></button></span></span>
           is what creates a sustainable visitor and business growth at the same
           time.</p>
 
@@ -842,7 +856,7 @@
   <script>
   /* ---------- reactions ----------
      There is no server behind this page, so a vote is stored in the reader's
-     own browser and the tallies below the thumbs are that reader's, not a
+     own browser and the tallies beside the emoji are that reader's, not a
      crowd's. Point VOTE_ENDPOINT at an API that accepts {topic, vote} and
      returns {up, down} to make them real; everything else stays as it is. */
   (function () {
