@@ -170,6 +170,34 @@
     border-left: 3px solid var(--accent); padding-left: 16px; margin: 24px 0; }
   .trek-essay .fork { margin-top: 28px; padding-top: 18px;
     border-top: 1px solid var(--line); color: var(--muted); font-size: 15.5px; }
+  /* Each takeaway is a titled block rather than a run-on line: the bold lead
+     carries the point, the paragraph under it carries the reasoning. The
+     number is drawn as a badge in the left gutter via a CSS counter, so the
+     list stays a real <ol> for screen readers and the body text below each
+     title still aligns to a single left edge. */
+  .trek-essay .trek-takeaways { counter-reset: takeaway; list-style: none;
+    padding-left: 0; }
+  .trek-essay .trek-takeaways > li { position: relative; margin-bottom: 20px;
+    padding-left: 40px; }
+  .trek-essay .trek-takeaways > li::before {
+    counter-increment: takeaway; content: counter(takeaway);
+    position: absolute; left: 0; top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; box-sizing: border-box;
+    font-size: 12.5px; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent); background: rgba(122,100,72,.10);
+    border: 1px solid rgba(122,100,72,.32); border-radius: 999px; }
+  .trek-essay .trek-takeaways > li > strong { display: block; margin-bottom: 4px; }
+  .trek-essay .trek-takeaways p { margin: 0 0 8px; }
+  .trek-essay .trek-takeaways > li > p:last-child { margin-bottom: 0; }
+  .trek-essay .trek-takeaways .trek-eg { font-size: 15px; color: var(--muted); }
+  .trek-essay .trek-takeaways .trek-eg em { font-style: normal; font-weight: 600; }
+  @media (max-width: 600px) {
+    .trek-essay .trek-takeaways > li { padding-left: 34px; }
+    .trek-essay .trek-takeaways > li::before { width: 23px; height: 23px;
+      font-size: 11.5px; }
+  }
 
   /* ---------- collapsible sections ----------
      <details> is used rather than a JS accordion: it opens without scripting,
@@ -197,6 +225,14 @@
     transition: transform .2s ease;
   }
   .trek-section[open] > summary::after { transform: rotate(-135deg); }
+  /* A small tag marking sections a general reader can skip. It sits in the
+     summary's flex row before the auto-margin chevron, so it trails the title
+     and never collides with it. */
+  .trek-opt { flex: none; font-size: 10px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase; font-style: normal;
+    color: var(--accent); background: rgba(122,100,72,.10);
+    border: 1px solid rgba(122,100,72,.30); border-radius: 4px;
+    padding: 2px 6px; line-height: 1.2; }
   .trek-section-body { padding: 2px 2px 22px; animation: sectionIn .25s ease both; }
   @keyframes sectionIn { from { opacity: 0; transform: translateY(-4px); }
                          to   { opacity: 1; transform: none; } }
@@ -549,10 +585,11 @@
       </details>
 
       <p class="fork">For people not interested in the maths, this is where we
-      take different paths. The rest of the article is for data scientists.</p>
+      take different paths. The rest of the article is for data scientists.
+      Do jump to the Key Takeaways</p>
 
       <details class="trek-section">
-        <summary>Exploring the math</summary>
+        <summary>Exploring the math<em class="trek-opt">Optional</em></summary>
         <div class="trek-section-body">
           <p>Let's continue on the YouTube example: we are testing a new feature
           designed to retain consumers. Suppose we collect the following
@@ -595,6 +632,9 @@
 
           <h3>The causal forest</h3>
 
+          <p>Now let's come to our new experiment. We have <var>S</var> at the
+          end of the experiment but no <var>Y</var>.</p>
+
           <ul>
             <li>Impute each user's estimated <var>Y</var> from the surrogate
             index of the previous step. This is done at the end of the
@@ -604,6 +644,11 @@
             <var>Y</var>, treatment <var>W</var> and covariates
             <var>X</var>.</li>
           </ul>
+
+          <p>In effect, the forest is asking a different question: it splits
+          users on their covariates until it finds groups whose
+          treated-minus-control gap in predicted retention genuinely
+          differs.</p>
 
           <table class="trek-table">
             <tbody>
@@ -707,7 +752,8 @@
       </details>
 
       <details class="trek-section">
-        <summary>Validate across historical experiments</summary>
+        <summary>Validate across historical experiments<em
+          class="trek-opt">Optional</em></summary>
         <div class="trek-section-body">
           <p>To establish empirical trust in the model, backtest it on a
           portfolio of <strong>completed historical A/B tests</strong> where
@@ -766,7 +812,7 @@
       </details>
 
       <details class="trek-section">
-        <summary>Post-experiment decision &amp; conclusion framework</summary>
+        <summary>Decision framework<em class="trek-opt">Optional</em></summary>
         <div class="trek-section-body">
           <p>At Day 14 of your live experiment, aggregate individual Causal
           Forest predictions across all treatment and control users to
@@ -831,8 +877,38 @@
         </div>
       </details>
 
+      <details class="trek-section" open>
+        <summary>Key takeaways</summary>
+        <div class="trek-section-body">
+          <ol class="trek-takeaways">
+            <li><strong>Crucial but not a panacea</strong>
+              <p>Long-term metrics drive ultimate business outcomes, but not
+              every experiment necessitates it. When addressing urgent or
+              immediate blockers, short-term metrics take priority.</p>
+              <p class="trek-eg"><em>Example:</em> Flash sales focus purely on
+              short-term conversion and immediate inventory clearance.</p></li>
+
+            <li><strong>The role of long-term metrics</strong>
+              <p>They act as the ultimate ground truth, and safeguard from
+              optimizing for local maxima or gains that may as well erode user
+              trust in the future.</p></li>
+
+            <li><strong>The holdouts alternative</strong>
+              <p>For novel experiments, where long-term dynamics are unknown or
+              historical exposure is unavailable, maintain a small holdout group
+              (e.g. 1&ndash;5% of traffic) that continues to be exposed to
+              treatment. Observe cumulative treatment effects and guard against
+              novelty decay over extended periods.</p></li>
+
+            <li><strong>Composite &amp; blended scoring</strong>
+              <p>Creating blended metrics that weigh short-term proxy signals
+              with the north star are additionally explored.</p></li>
+          </ol>
+        </div>
+      </details>
+
       <details class="trek-section">
-        <summary>Key resources &amp; recommended reading</summary>
+        <summary>Key resources</summary>
         <div class="trek-section-body">
           <ul class="trek-reading">
             <li><a href="https://www.nber.org/papers/w26463"
