@@ -548,7 +548,7 @@
           directionally align with your long-term metric. For ex: We may assume that
           higher time to climb means better chances of summit success. But trekkers 
           may actually be engaging with each other and walking slower, 
-               only to get tired sooner
+               only to wear out sooner
           and abandon the rest of the trek altogether.</p>
 
           <p class="lede">The solution is <strong>surrogate metrics</strong>:
@@ -564,7 +564,7 @@
           surrogates bridges the gap between immediate experiment results and
           lasting retention.</p>
 
-          <p>Imagine you are working at YouTube testing a new feature designed
+          <p>Imagine you are working at YouTube, evaluating a new feature designed
           to increase consumer retention. Consumer here is the user who streams
           and consumes content. For this case, let's assume it's a two-week
           experiment.</p>
@@ -572,27 +572,28 @@
           <p>You first measure the short-term signals over the course of two
           weeks: this can be watch hours, active days, subscriptions etc.</p>
 
-          <p>But you still want to know how these signals help in evaluating the
-          long-term goal.</p>
+          <p>But you still need to know: does this two-week lift actually cause 
+          long-term retention?</p>
 
-          <p>So you look at your archive of old experiments, far enough back to
-          have the actual retention data. An experiment evaluating 12-month
-          retention must have spent at least a year to qualify here. Now, you
-          have both: the two-week signals back then, and what actually happened
-          later. Learn the pattern between them once, and you have built a
-          translator — early signals in, long-term retention out.</p>
+          <p>So you look at historical experiments, far enough back to
+          have the actual retention data (If you don't have any history,
+          read Key takeaway 3 for alternatives). An experiment evaluating 12-month
+          retention must have spent at least a full year to qualify. Instead of 
+          just looking at user habits, you analyze how the treatment effects (lifts) 
+          on those two-week signals quantifiably translated into long-term retention 
+               lifts across past experiments. Once you learn this causal translation layer, 
+          you feed your new two-week test results into it, and it outputs your expected 
+          12-month retention impact today.</p>
 
-          <p>Run your new test for two weeks and it tells you the likely
-          retention impact.</p>
-
-          <p>You get a decision now instead of three, six or twelve months from
-          now.</p>
+          <p>The Advantage: You get a decision now instead of three, six or twelve months into the
+          future</p>
         </div>
       </details>
 
-      <p class="fork">For people not interested in the maths, this is where we
+      <p class="fork">Hope you found this interesting! For people not interested in the math, 
+     this is where we
       take different paths. The rest of the article is for data scientists.
-      Do jump to the Key Takeaways</p>
+      Do jump to the Key Takeaways.</p>
 
       <details class="trek-section">
         <summary>Exploring the math<em class="trek-opt">Optional</em></summary>
