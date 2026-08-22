@@ -149,6 +149,20 @@
   .trek-essay ol { margin: 0 0 17px; padding-left: 1.4em; }
   .trek-essay ol li { margin-bottom: 9px; padding-left: 3px; }
   .trek-essay ol li:last-child { margin-bottom: 0; }
+  /* Unordered lists match the ordered ones, but the steps inside the maths
+     section are a sequence of operations rather than a ranked list, so they
+     take a marker that does not imply precedence. */
+  .trek-essay ul { margin: 0 0 17px; padding-left: 1.3em; list-style: none; }
+  .trek-essay ul li { position: relative; margin-bottom: 9px; padding-left: 3px; }
+  .trek-essay ul li:last-child { margin-bottom: 0; }
+  .trek-essay ul li::before { content: "—"; position: absolute; left: -1.3em;
+    color: var(--accent); }
+  /* Symbols read as maths rather than as emphasis: serif italic is the
+     convention for scalars and vectors, and costs no extra font request. */
+  .trek-essay var { font-family: Georgia, "Times New Roman", serif;
+    font-style: italic; font-size: 1.04em; color: var(--ink); }
+  .trek-note { font-size: 14.5px; color: var(--muted); padding-left: 14px;
+    border-left: 2px solid var(--line); }
   .trek-essay strong { color: var(--ink); font-weight: 600; }
   .trek-essay h3 { font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--muted); font-weight: 600; margin: 30px 0 13px; }
@@ -192,6 +206,11 @@
   }
   .trek-section-body > :last-child { margin-bottom: 0; }
   .trek-section-body .lede { margin-bottom: 0; }
+  .trek-section-body > h3:first-child { margin-top: 4px; }
+  /* The fork line already draws a rule above itself; without this the section
+     that follows would stack a second rule right beneath the same paragraph. */
+  .trek-essay .fork { margin-bottom: 26px; }
+  .trek-essay .fork + .trek-section { border-top-color: var(--line); }
 
   /* ---------- mobile ---------- */
   @media (max-width: 860px) {
@@ -222,6 +241,122 @@
     .tc-card-value { font-size: 22px; }
     .tc-card-name { font-size: 12px; }
   }
+  /* ---------- maths: display equation and objective table ---------- */
+  .trek-eq { font-family: Georgia, "Times New Roman", serif; font-size: 18px;
+    text-align: center; margin: 0 0 14px; padding: 15px 12px;
+    background: #FBFBFB; border: 1px solid var(--line); border-radius: 8px;
+    overflow-x: auto; color: var(--ink); }
+  .trek-eq sub { font-size: .68em; }
+  .trek-inline-eq { display: inline-block; margin-top: 5px; color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif; font-size: 1.05em; }
+  .trek-table { width: 100%; border-collapse: collapse; margin: 6px 0 17px;
+    border: 1px solid var(--line); font-size: 14.5px; line-height: 1.55; }
+  .trek-table th { width: 31%; text-align: left; vertical-align: top;
+    font-weight: 600; color: var(--ink); background: #FBFBFB;
+    padding: 13px 14px; border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); }
+  .trek-table td { vertical-align: top; color: var(--muted);
+    padding: 13px 14px; border-bottom: 1px solid var(--line); }
+  .trek-table tr:last-child th, .trek-table tr:last-child td { border-bottom: none; }
+
+  /* ---------- causal forest explainer ----------
+     Every rule below is scoped to .cf-explainer. The original file set its
+     palette on :root and its type on body, both of which would have repainted
+     the whole page - the wrapper now owns those variables instead, so the
+     widget keeps its own colours without leaking them outward. */.cf-explainer{
+    --ink:#1c1a17; --ink-soft:#5c564d; --ink-faint:#8a8377;
+    --line:#e2ddd3; --line-soft:#eee9df;
+    --cool:#1d7d84; --cool-ink:#0d4a4f; --cool-wash:#e3f0f0;
+    --warm:#b56a1c; --warm-ink:#8a4a08; --warm-wash:#f3e7d5;
+    --treat:#5a4bd1; --treat-wash:#eae7f8;
+    --card:#fff;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  .cf-explainer *{box-sizing:border-box}
+  .cf-explainer{margin:0;font-family:var(--sans);color:var(--ink);background:#fff;line-height:1.55;-webkit-font-smoothing:antialiased;font-size:13px}
+  .cf-explainer .wrap{max-width:760px;margin:0 auto;padding:20px 20px 28px}
+  .cf-explainer .block{padding:18px 0}
+  .cf-explainer .block + .block{border-top:1px solid var(--line-soft)}
+  .cf-explainer h2{font-family:var(--sans);font-weight:650;font-size:17px;letter-spacing:-.01em;margin:0 0 12px;color:var(--ink)}
+  .cf-explainer p{font-size:13px;color:var(--ink-soft);margin:0 0 10px;max-width:600px}
+  .cf-explainer p b{color:var(--ink);font-weight:600}
+
+  .cf-explainer /* table */
+  .tbl{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:12px}
+  .cf-explainer .tbl th, .cf-explainer .tbl td{padding:6px 6px;text-align:center;border-bottom:1px solid var(--line-soft)}
+  .cf-explainer .tbl thead th{font-family:var(--mono);font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-faint);background:#faf8f3;font-weight:600}
+  .cf-explainer .tbl tbody tr:last-child td{border-bottom:none}
+  .cf-explainer .tbl .user{text-align:left;font-weight:600;color:var(--ink);padding-left:12px}
+  .cf-explainer .tbl td.mono, .cf-explainer .tbl th.mono{font-family:var(--mono)}
+  .cf-explainer .grp-s{background:rgba(227,240,240,.5)}
+  .cf-explainer .col-x{background:#f3f1ea;font-family:var(--mono)}
+  .cf-explainer .col-w{font-family:var(--mono);color:var(--treat);font-weight:600}
+  .cf-explainer .col-y{background:var(--warm-wash);font-family:var(--mono);font-weight:600;color:var(--warm-ink)}
+  .cf-explainer .tbl .sep{border-left:1px solid var(--line)}
+
+  .cf-explainer /* calc */
+  .calc{font-family:var(--mono);font-size:12px;line-height:1.75;background:#faf8f3;
+    border:1px solid var(--line-soft);border-left:2.5px solid var(--cool);border-radius:0 8px 8px 0;
+    padding:11px 14px;margin:10px 0;overflow-x:auto;white-space:pre;color:var(--ink)}
+  .cf-explainer .calc.treat{border-left-color:var(--treat)}
+  .cf-explainer .calc .res{color:var(--warm-ink);font-weight:600}
+  .cf-explainer .calc .rest{color:var(--treat);font-weight:600}
+  .cf-explainer .calc .dim{color:var(--ink-faint)}
+  .cf-explainer .hlw{color:var(--warm-ink);font-weight:600}
+  .cf-explainer .hlt{color:var(--treat);font-weight:600}
+
+  .cf-explainer /* leaves side by side */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
+  .cf-explainer .leaf{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cf-explainer .leaf .lh{padding:8px 12px;font-weight:600;font-size:13px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center}
+  .cf-explainer .leaf .lh .who{font-family:var(--mono);font-size:10px;color:var(--ink-faint);font-weight:400}
+  .cf-explainer .leaf .lb{padding:11px 12px}
+  .cf-explainer .leaf .lb .calc{margin:0;background:transparent;border:none;padding:0;font-size:11.5px;line-height:1.7}
+  .cf-explainer .tau{margin-top:7px;font-weight:700;font-size:17px}
+  .cf-explainer .tau.big{color:var(--warm)} .cf-explainer .tau.small{color:var(--ink-soft)}
+  .cf-explainer .tau .u{font-family:var(--mono);font-size:10px;color:var(--ink-faint);font-weight:400}
+
+  .cf-explainer .ate{margin-top:12px;background:#faf8f3;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .cf-explainer .ate .calc{background:transparent;border:none;padding:0;margin:0 0 4px}
+  .cf-explainer .ate .big{font-weight:700;font-size:22px;color:var(--treat)}
+  .cf-explainer .ate .chk{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:5px}
+
+  .cf-explainer .takeaway{background:#241f1a;color:#eee7dc;border-radius:11px;padding:16px 18px;margin-top:4px}
+  .cf-explainer .takeaway h3{font-weight:600;font-size:15px;margin:0 0 11px;color:#fff;line-height:1.3}
+  .cf-explainer .takeaway .nums{display:flex;gap:20px;flex-wrap:wrap}
+  .cf-explainer .takeaway .n b{display:block;font-size:20px;font-weight:700;line-height:1.1}
+  .cf-explainer .takeaway .n.newv b{color:#63cfd7} .cf-explainer .takeaway .n.estv b{color:#e6a35b} .cf-explainer .takeaway .n.allv b{color:#a79bff}
+  .cf-explainer .takeaway .n span{font-family:var(--mono);font-size:10px;color:#a89f92}
+
+  .cf-explainer .var{font-family:var(--mono);padding:0 4px;border-radius:3px;background:#f3f1ea;font-weight:500;font-size:.92em}
+  .cf-explainer .var.s{color:var(--cool-ink);background:var(--cool-wash)} .cf-explainer .var.y{color:var(--warm-ink);background:var(--warm-wash)}
+  .cf-explainer .var.w{color:var(--treat);background:var(--treat-wash)}
+
+  @media(max-width:600px){ .cf-explainer .split{grid-template-columns:1fr} }
+  /* Overrides: the widget was a standalone page, so it centred and padded
+     itself. Inside the essay the section handles both. */
+  .cf-explainer { margin: 26px 0 0; }
+  .cf-explainer .wrap { max-width: none; margin: 0; padding: 0; }
+  .cf-explainer .block:first-child { padding-top: 0; }
+  /* The 8-column table cannot shrink below its content, so give it a scroll
+     rail rather than letting it push the page sideways on a phone. */
+  .cf-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cf-scroll .tbl { min-width: 560px; }
+  /* The essay measure is tuned for prose (~68ch); the worked example is a
+     table and two side-by-side panels, so it breaks out to its native width
+     once the viewport can afford it. Centred on the parent, which is itself
+     centred, so it stays centred on the page. */
+  @media (min-width: 840px) {
+    .cf-explainer { width: 760px; margin-left: 50%; transform: translateX(-50%); }
+  }
+  @media (max-width: 620px) {
+    .trek-eq { font-size: 16px; padding: 12px 10px; }
+    .trek-table { font-size: 13.5px; }
+    .trek-table th, .trek-table td { padding: 10px 11px; }
+    .trek-table th { width: 36%; }
+  }
+
 </style>
 </head>
 <body>
@@ -323,6 +458,157 @@
 
       <p class="fork">For people not interested in the maths, this is where we
       take different paths. The rest of the article is for data scientists.</p>
+
+      <details class="trek-section">
+        <summary>Exploring the math</summary>
+        <div class="trek-section-body">
+          <p>Let's continue on the YouTube example: we are testing a new feature
+          designed to retain consumers. Suppose we collect the following
+          short-term metrics.</p>
+
+          <p><strong>Short-term metrics:</strong> Day-1 watch time, channel
+          subscriptions, search queries executed, or "Niche Depth" (watching
+          ≥ 3 videos in one topic).</p>
+
+          <p><strong>Assumption:</strong> the treatment affects the long-term
+          outcome ONLY through the observed short-term surrogate metrics.</p>
+
+          <p><strong>A good thumb-rule:</strong> always include multiple
+          short-term behaviors to capture both engagement and friction
+          signals.</p>
+
+          <h3>The surrogate index calculation</h3>
+
+          <ul>
+            <li>Take completed historical experiments which have actual data
+            available on <var>Y</var>. Given <var>Y</var> here is 12m retention,
+            all experiments conducted at least 12 months before are eligible,
+            since we can evaluate the true <var>Y</var> on customers.</li>
+            <li>Measure actual observed short-term metrics (<var>S</var>) at the
+            end of experiments and the actual observed <var>Y</var> that is
+            available post 12 months from the experiment.</li>
+          </ul>
+
+          <p>Regress <var>Y</var> on both <var>X</var> and surrogate vector
+          <var>S</var>.</p>
+
+          <p class="trek-eq"><var>Y</var> = &beta;<sub>0</sub> +
+          &beta;<sub>1</sub><var>S</var> + &beta;<sub>2</sub><var>X</var> +
+          &epsilon;</p>
+
+          <p class="trek-note"><var>S</var>: vector of 14-day surrogate
+          behaviors.<br>
+          <var>X</var>: pre-experiment user covariates (e.g. country, account
+          age, historical activity).</p>
+
+          <h3>The causal forest</h3>
+
+          <ul>
+            <li>Impute each user's estimated <var>Y</var> from the surrogate
+            index of the previous step. This is done at the end of the
+            experiment, predicting <var>Y</var> using available data on
+            short-term metrics.</li>
+            <li>Train a Generalized Random Forest with that imputed
+            <var>Y</var>, treatment <var>W</var> and covariates
+            <var>X</var>.</li>
+          </ul>
+
+          <table class="trek-table">
+            <tbody>
+              <tr>
+                <th scope="row">Optimization objective</th>
+                <td>Estimate the Individual Treatment Effect (ITE) function:
+                  <span class="trek-inline-eq">&tau;(<var>S</var>, <var>X</var>)
+                  = E[ <var>Y</var>(1) &minus; <var>Y</var>(0) | <var>S</var>,
+                  <var>X</var> ]</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Operational output</th>
+                <td>Personalized Causal Scoring Engine: outputs predicted
+                365-day treatment effect <var>&tau;&#770;<sub>i</sub></var> for
+                every user in a new 14-day experiment.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <section class="cf-explainer" aria-label="Causal forest worked example">
+          <!-- WHAT WE START WITH -->
+            <div class="block">
+              <h2>What we start with</h2>
+              <div class="cf-scroll"><table class="tbl">
+                <thead>
+                  <tr>
+                    <th class="user" style="text-align:left">User</th>
+                    <th>Account age</th><th class="mono">W</th>
+                    <th class="sep mono">watch</th><th class="mono">subs</th><th class="mono">search</th><th class="mono">niche</th>
+                    <th class="sep mono">Ŷ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td class="user">User 1</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">22</td><td class="grp-s">3</td><td class="grp-s">8</td><td class="grp-s">1</td><td class="col-y sep">0.871</td></tr>
+                  <tr><td class="user">User 2</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">18</td><td class="grp-s">2</td><td class="grp-s">6</td><td class="grp-s">1</td><td class="col-y sep">0.782</td></tr>
+                  <tr><td class="user">User 3</td><td class="col-x">New</td><td class="col-w">0</td><td class="grp-s sep">10</td><td class="grp-s">1</td><td class="grp-s">3</td><td class="grp-s">0</td><td class="col-y sep">0.433</td></tr>
+                  <tr><td class="user">User 4</td><td class="col-x">Established</td><td class="col-w">1</td><td class="grp-s sep">24</td><td class="grp-s">3</td><td class="grp-s">9</td><td class="grp-s">1</td><td class="col-y sep">0.921</td></tr>
+                  <tr><td class="user">User 5</td><td class="col-x">Established</td><td class="col-w">0</td><td class="grp-s sep">20</td><td class="grp-s">2</td><td class="grp-s">7</td><td class="grp-s">1</td><td class="col-y sep">0.861</td></tr>
+                </tbody>
+              </table></div>
+            </div>
+
+            <!-- MODEL OUTPUT (former step 3) -->
+            <div class="block">
+              <h2>Model output</h2>
+              <div class="split">
+                <div class="leaf">
+                  <div class="lh">Leaf: New <span class="who">Users 1, 2, 3</span></div>
+                  <div class="lb">
+                    <div class="calc">avg treated = (0.871 + 0.782)/2 = <span class="hlw">0.827</span>
+          avg control = 0.433            = <span class="hlw">0.433</span>
+          τ̂ = 0.827 − 0.433</div>
+                    <div class="tau big">+0.394 <span class="u">retention</span></div>
+                  </div>
+                </div>
+                <div class="leaf">
+                  <div class="lh">Leaf: Established <span class="who">Users 4, 5</span></div>
+                  <div class="lb">
+                    <div class="calc">avg treated = 0.921 = <span class="hlw">0.921</span>
+          avg control = 0.861 = <span class="hlw">0.861</span>
+          τ̂ = 0.921 − 0.861</div>
+                    <div class="tau small">+0.060 <span class="u">retention</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ATE -->
+            <div class="block">
+              <h2>Average the effect across everyone</h2>
+              <p>Each user gets a score <span class="var w">Γ</span> = their leaf's effect + a correction for how far their own Ŷ sat from the leaf-arm average. Treatment was 50/50, so the correction divides by 0.5.</p>
+              <div class="calc treat"><span class="dim">User 1 (New, treated):</span>
+            leaf effect (New) = 0.827 − 0.433         = <span class="hlt">0.394</span>
+            correction        = (0.871 − 0.827)/0.5   = <span class="hlt">+0.088</span>
+            Γ = 0.394 + 0.088 = <span class="rest">0.482</span></div>
+              <p>Similarly, Γ = +0.305 for User 2, +0.394 for User 3, +0.060 for User 4, and +0.060 for User 5.</p>
+              <div class="ate">
+                <div class="calc treat">ATE = (0.482 + 0.305 + 0.394 + 0.060 + 0.060)/5 = 1.301/5</div>
+                <div class="big">ATE = +0.260</div>
+                <div class="chk">cross-check · size-weighted leaves = (0.394×3 + 0.060×2)/5 = +0.260 ✓</div>
+              </div>
+            </div>
+
+            <!-- TAKEAWAY -->
+            <div class="block" style="border-top:none">
+              <div class="takeaway">
+                <h3>The new algorithm lifts 12-month retention — but not evenly.</h3>
+                <div class="nums">
+                  <div class="n newv"><b>+39 pp</b><span>new accounts</span></div>
+                  <div class="n estv"><b>+6 pp</b><span>established accounts</span></div>
+                  <div class="n allv"><b>+26 pp</b><span>everyone (ATE)</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </details>
     </article>
 
   </div>
