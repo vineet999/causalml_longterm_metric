@@ -590,10 +590,38 @@
         </div>
       </details>
 
+      <details class="trek-section" open>
+        <summary>Key takeaways</summary>
+        <div class="trek-section-body">
+          <ol class="trek-takeaways">
+            <li><strong>Crucial but not a panacea</strong>
+              <p>Long-term metrics drive ultimate business outcomes, but this
+               doesn't auto-select them in every experiment. When addressing urgent or
+              immediate blockers, short-term metrics take priority and add better value.</p>
+              <p class="trek-eg"><em>Example:</em> Flash sales focus purely on
+              short-term conversions and immediate inventory clearance.</p></li>
+
+            <li><strong>The role of long-term metrics</strong>
+              <p>They safeguard you from chasing small, temporary gains that risk 
+                   eroding user trust.</p></li>
+
+            <li><strong>The holdouts alternative</strong>
+              <p>For novel experiments, where historical exposure is unavailable, 
+               keep aside a small holdout group
+              (e.g. 1&ndash;5% of traffic) that continues to be exposed to
+              treatment. Observe cumulative treatment effects and guard against
+              novelty decay over extended periods.</p></li>
+
+            <li><strong>Composite &amp; blended scoring</strong>
+              <p>Creating blended metrics that weigh short-term proxy signals
+              with the north star are additionally explored.</p></li>
+          </ol>
+        </div>
+      </details>
+
       <p class="fork">Hope you found this interesting! For people not interested in the math, 
      this is where we
-      take different paths. The rest of the article is for data scientists.
-      Do jump to the Key Takeaways.</p>
+      take different paths. The rest of the article is for data scientists.</p>
 
       <details class="trek-section">
         <summary>Exploring the math<em class="trek-opt">Optional</em></summary>
@@ -759,7 +787,7 @@
       </details>
 
       <details class="trek-section">
-        <summary>Validate across historical experiments<em
+        <summary>Validation &amp; decision framework<em
           class="trek-opt">Optional</em></summary>
         <div class="trek-section-body">
           <p>To establish empirical trust in the model, backtest it on a
@@ -815,12 +843,9 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </details>
 
-      <details class="trek-section">
-        <summary>Decision framework<em class="trek-opt">Optional</em></summary>
-        <div class="trek-section-body">
+          <h3>Decision framework</h3>
+
           <p>At Day 14 of your live experiment, aggregate individual Causal
           Forest predictions across all treatment and control users to
           compute the overall <strong>Average Treatment Effect
@@ -881,35 +906,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </details>
-
-      <details class="trek-section" open>
-        <summary>Key takeaways</summary>
-        <div class="trek-section-body">
-          <ol class="trek-takeaways">
-            <li><strong>Crucial but not a panacea</strong>
-              <p>Long-term metrics drive ultimate business outcomes, but this
-               doesn't auto-select them in every experiment. When addressing urgent or
-              immediate blockers, short-term metrics take priority and add better value.</p>
-              <p class="trek-eg"><em>Example:</em> Flash sales focus purely on
-              short-term conversions and immediate inventory clearance.</p></li>
-
-            <li><strong>The role of long-term metrics</strong>
-              <p>They safeguard you from chasing small, temporary gains that risk 
-                   eroding user trust.</p></li>
-
-            <li><strong>The holdouts alternative</strong>
-              <p>For novel experiments, where historical exposure is unavailable, 
-               keep aside a small holdout group
-              (e.g. 1&ndash;5% of traffic) that continues to be exposed to
-              treatment. Observe cumulative treatment effects and guard against
-              novelty decay over extended periods.</p></li>
-
-            <li><strong>Composite &amp; blended scoring</strong>
-              <p>Creating blended metrics that weigh short-term proxy signals
-              with the north star are additionally explored.</p></li>
-          </ol>
         </div>
       </details>
 
