@@ -163,7 +163,17 @@
     font-style: italic; font-size: 1.04em; color: var(--ink); }
   .trek-note { font-size: 14.5px; color: var(--muted); padding-left: 14px;
     border-left: 2px solid var(--line); }
+  /* A note nested under a list item is a rider on that item, not a new
+     paragraph: it needs a little air above so the rule reads as attached to
+     the point it qualifies rather than floating between two of them. */
+  .trek-essay li > .trek-note { margin-top: 9px; }
   .trek-essay strong { color: var(--ink); font-weight: 600; }
+  /* Links in the running prose take the same accent-and-hairline treatment as
+     the reading list, so an inline reference never drops a default browser
+     blue into an otherwise earthy palette. */
+  .trek-essay a { color: var(--accent); text-decoration: none;
+    border-bottom: 1px solid rgba(122,100,72,.35); font-weight: 500; }
+  .trek-essay a:hover { border-bottom-color: var(--accent); }
   .trek-essay h3 { font-size: 15px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--muted); font-weight: 600; margin: 30px 0 13px; }
   .trek-essay .lede { font-size: 18.5px; line-height: 1.6; color: var(--ink);
@@ -584,6 +594,47 @@
 
           <p>The Advantage: You get a decision now instead of three, six or twelve months into the
           future</p>
+
+          <h3>What are my assumptions?</h3>
+
+          <ol>
+            <li><strong>The biggest one:</strong> your long-term metric
+            (<var>Y</var>) is influenced <em>only</em> through the observed
+            short-term metrics (<var>S</var>).
+              <p class="trek-note"><strong>How to validate:</strong> regress
+              <var>Y</var> against <var>S</var> and the treatment indicator
+              (<var>W</var> &mdash; 1: yes, 0: no). If the coefficient on
+              treatment assignment is large and significant, you have causal
+              effects that haven't been captured by your short-term
+              surrogates.</p></li>
+
+            <li>The short-term to long-term mapping is comparable against
+            historical experiments.</li>
+
+            <li>All experiment validation tests hold true &mdash; no sample
+            ratio mismatch and no SUTVA violations.</li>
+          </ol>
+
+          <h3>How do I know I have the right short-term metrics?</h3>
+
+          <p>The right way to design metrics is to align with the user
+          outcomes you expect from the treatment, not just clicks. Next, build
+          aspects that are more orthogonal to each other. If this is a
+          recommendation change, you might consider:</p>
+
+          <ul>
+            <li><strong>Intensity:</strong> # videos watched above 30s, or
+            average video completions.</li>
+            <li><strong>Breadth:</strong> distinct categories watched.</li>
+            <li><strong>Completion:</strong> task success, or view-to-watch
+            conversions.</li>
+            <li><strong>Friction:</strong> skips, "not interested,"
+            notification disables.</li>
+          </ul>
+
+          <p>If you are new to metric design, check out Google's popular
+          <a href="https://humblefork.in/metric-framework" target="_blank"
+          rel="noopener">HEART framework</a>.</p>
         </div>
       </details>
 
