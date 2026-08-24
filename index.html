@@ -683,9 +683,11 @@
           designed to retain consumers. Suppose we collect the following
           short-term metrics.</p>
 
-          <p><strong>Short-term metrics:</strong> Day-1 watch time, channel
-          subscriptions, search queries executed, or "Niche Depth" (watching
-          ≥ 3 videos in one topic).</p>
+          <p><strong>Short-term metrics:</strong> one signal per aspect from the
+          list above &mdash; <em>30s+ views</em> (intensity), <em>distinct
+          categories watched</em> (breadth), <em>video completions</em>
+          (completion), and <em>skips</em> (friction). Note that skips run the
+          other way: higher is worse.</p>
 
           <p><strong>Assumption:</strong> the treatment affects the long-term
           outcome ONLY through the observed short-term surrogate metrics.</p>
@@ -766,16 +768,16 @@
                   <tr>
                     <th class="user" style="text-align:left">User</th>
                     <th>Account age</th><th class="mono">W</th>
-                    <th class="sep mono">watch</th><th class="mono">subs</th><th class="mono">search</th><th class="mono">niche</th>
+                    <th class="sep mono">30s views</th><th class="mono">cats</th><th class="mono">compl</th><th class="mono">skips</th>
                     <th class="sep mono">Ŷ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td class="user">User 1</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">22</td><td class="grp-s">3</td><td class="grp-s">8</td><td class="grp-s">1</td><td class="col-y sep">0.871</td></tr>
-                  <tr><td class="user">User 2</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">18</td><td class="grp-s">2</td><td class="grp-s">6</td><td class="grp-s">1</td><td class="col-y sep">0.782</td></tr>
-                  <tr><td class="user">User 3</td><td class="col-x">New</td><td class="col-w">0</td><td class="grp-s sep">10</td><td class="grp-s">1</td><td class="grp-s">3</td><td class="grp-s">0</td><td class="col-y sep">0.433</td></tr>
-                  <tr><td class="user">User 4</td><td class="col-x">Established</td><td class="col-w">1</td><td class="grp-s sep">24</td><td class="grp-s">3</td><td class="grp-s">9</td><td class="grp-s">1</td><td class="col-y sep">0.921</td></tr>
-                  <tr><td class="user">User 5</td><td class="col-x">Established</td><td class="col-w">0</td><td class="grp-s sep">20</td><td class="grp-s">2</td><td class="grp-s">7</td><td class="grp-s">1</td><td class="col-y sep">0.861</td></tr>
+                  <tr><td class="user">User 1</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">22</td><td class="grp-s">3</td><td class="grp-s">8</td><td class="grp-s">2</td><td class="col-y sep">0.421</td></tr>
+                  <tr><td class="user">User 2</td><td class="col-x">New</td><td class="col-w">1</td><td class="grp-s sep">19</td><td class="grp-s">2</td><td class="grp-s">6</td><td class="grp-s">3</td><td class="col-y sep">0.405</td></tr>
+                  <tr><td class="user">User 3</td><td class="col-x">New</td><td class="col-w">0</td><td class="grp-s sep">17</td><td class="grp-s">2</td><td class="grp-s">5</td><td class="grp-s">5</td><td class="col-y sep">0.392</td></tr>
+                  <tr><td class="user">User 4</td><td class="col-x">Established</td><td class="col-w">1</td><td class="grp-s sep">24</td><td class="grp-s">3</td><td class="grp-s">9</td><td class="grp-s">1</td><td class="col-y sep">0.716</td></tr>
+                  <tr><td class="user">User 5</td><td class="col-x">Established</td><td class="col-w">0</td><td class="grp-s sep">23</td><td class="grp-s">3</td><td class="grp-s">8</td><td class="grp-s">2</td><td class="col-y sep">0.712</td></tr>
                 </tbody>
               </table></div>
             </div>
@@ -787,19 +789,19 @@
                 <div class="leaf">
                   <div class="lh">Leaf: New <span class="who">Users 1, 2, 3</span></div>
                   <div class="lb">
-                    <div class="calc">avg treated = (0.871 + 0.782)/2 = <span class="hlw">0.827</span>
-          avg control = 0.433            = <span class="hlw">0.433</span>
-          τ̂ = 0.827 − 0.433</div>
-                    <div class="tau big">+0.394 <span class="u">retention</span></div>
+                    <div class="calc">avg treated = (0.421 + 0.405)/2 = <span class="hlw">0.413</span>
+          avg control = 0.392            = <span class="hlw">0.392</span>
+          τ̂ = 0.413 − 0.392</div>
+                    <div class="tau big">+0.021 <span class="u">retention</span></div>
                   </div>
                 </div>
                 <div class="leaf">
                   <div class="lh">Leaf: Established <span class="who">Users 4, 5</span></div>
                   <div class="lb">
-                    <div class="calc">avg treated = 0.921 = <span class="hlw">0.921</span>
-          avg control = 0.861 = <span class="hlw">0.861</span>
-          τ̂ = 0.921 − 0.861</div>
-                    <div class="tau small">+0.060 <span class="u">retention</span></div>
+                    <div class="calc">avg treated = 0.716 = <span class="hlw">0.716</span>
+          avg control = 0.712 = <span class="hlw">0.712</span>
+          τ̂ = 0.716 − 0.712</div>
+                    <div class="tau small">+0.004 <span class="u">retention</span></div>
                   </div>
                 </div>
               </div>
@@ -810,14 +812,14 @@
               <h2>Average the effect across everyone</h2>
               <p>Each user gets a score <span class="var w">Γ</span> = their leaf's effect + a correction for how far their own Ŷ sat from the leaf-arm average. Treatment was 50/50, so the correction divides by 0.5.</p>
               <div class="calc treat"><span class="dim">User 1 (New, treated):</span>
-            leaf effect (New) = 0.827 − 0.433         = <span class="hlt">0.394</span>
-            correction        = (0.871 − 0.827)/0.5   = <span class="hlt">+0.088</span>
-            Γ = 0.394 + 0.088 = <span class="rest">0.482</span></div>
-              <p>Similarly, Γ = +0.305 for User 2, +0.394 for User 3, +0.060 for User 4, and +0.060 for User 5.</p>
+            leaf effect (New) = 0.413 − 0.392         = <span class="hlt">0.021</span>
+            correction        = (0.421 − 0.413)/0.5   = <span class="hlt">+0.016</span>
+            Γ = 0.021 + 0.016 = <span class="rest">0.037</span></div>
+              <p>Similarly, Γ = +0.005 for User 2, +0.021 for User 3, +0.004 for User 4, and +0.004 for User 5.</p>
               <div class="ate">
-                <div class="calc treat">ATE = (0.482 + 0.305 + 0.394 + 0.060 + 0.060)/5 = 1.301/5</div>
-                <div class="big">ATE = +0.260</div>
-                <div class="chk">cross-check · size-weighted leaves = (0.394×3 + 0.060×2)/5 = +0.260 ✓</div>
+                <div class="calc treat">ATE = (0.037 + 0.005 + 0.021 + 0.004 + 0.004)/5 = 0.071/5</div>
+                <div class="big">ATE = +0.014</div>
+                <div class="chk">cross-check · size-weighted leaves = (0.021×3 + 0.004×2)/5 = +0.014 ✓</div>
               </div>
             </div>
 
@@ -826,9 +828,9 @@
               <div class="takeaway">
                 <h3>The new algorithm lifts 12-month retention — but not evenly.</h3>
                 <div class="nums">
-                  <div class="n newv"><b>+39 pp</b><span>new accounts</span></div>
-                  <div class="n estv"><b>+6 pp</b><span>established accounts</span></div>
-                  <div class="n allv"><b>+26 pp</b><span>everyone (ATE)</span></div>
+                  <div class="n newv"><b>+2.1 pp</b><span>new accounts</span></div>
+                  <div class="n estv"><b>+0.4 pp</b><span>established accounts</span></div>
+                  <div class="n allv"><b>+1.4 pp</b><span>everyone (ATE)</span></div>
                 </div>
               </div>
             </div>
