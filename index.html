@@ -595,6 +595,19 @@
           <p>The Advantage: You get an estimate now instead of three, six or twelve months into the
           future</p>
 
+          <h3>How are we measuring true treatment induced lift?</h3>
+
+          <p>We are not simply comparing treatment and control means of the retention estimate here. 
+               There is a chance that these differences could include skewness from power users and 
+               variance from lucky treatment assignments. Instead, causal forests solve this by using 
+               pre-treatment user attributes, ex: account age, country etc. to dynamically segment your 
+               audience into hyper-similar peer groups. By calculating localized treatment effects (CATE) 
+               within these segments, the model isolates which specific segments experience the highest 
+               uplift. One thing to be wary is that CFs act as variance reduction and targeting framework. 
+               When identifying segments where the lift is highest, they provide prioritization for 
+               phased feature roll outs which should not be misinterpreted as the only winner segments 
+               that deserve feature access.</p>
+
           <h3>What are my assumptions?</h3>
 
           <ol>
